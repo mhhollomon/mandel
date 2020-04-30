@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package fractal;
+
+message Point {
+  double real = 1;
+  double img = 2;
+}
+
+message Header {
+  int32 signature = 1; // [default = 0x46520100 ];
+  Point bb_tl = 3;
+  Point bb_br = 4;
+  int32 real_samples = 5;
+  int32 img_samples = 6;
+  int32 limit = 7;
+}
+
+message Results {
+  Point  last_value = 1;
+  double last_modulus = 2;
+  int32  iterations = 3;
+  bool   diverged = 4;
+}
+
+message Row {
+  repeated Results results = 1;
+}
+
+message File {
+  Header header = 1;
+  repeated Row rows = 2;
+}
