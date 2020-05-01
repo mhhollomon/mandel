@@ -52,7 +52,7 @@ add_executable(fractalator)
 
 target_sources(fractalator
     PRIVATE
-        "src/fractalator.cpp"
+        "src/fractalator/fractalator.cpp"
         "src/include/compute.hpp"
     )
 
@@ -85,7 +85,7 @@ target_link_libraries(colorator
         lib_objlib
         lib-include
         fractal-file
-        angelscript-addons
+        script_engine
     )
 
 

@@ -14,6 +14,12 @@ struct check_results {
     coord last_modulus = 0.0;
     int iterations = 0;
     bool diverged = false;
+
+    check_results() = default;
+    check_results(check_results const &o) :
+        last_value(o.last_value), last_modulus(o.last_modulus),
+        iterations(o.iterations), diverged(o.diverged)
+    {}
 };
 
 struct fractal_params {

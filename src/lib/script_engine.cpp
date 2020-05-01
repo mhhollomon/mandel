@@ -79,6 +79,48 @@ void ScriptEngine::print_exception_info() {
     std::cerr << "line : " << context_->GetExceptionLineNumber() << "\n";
 }
 
+bool ScriptEngine::execute_context() {
+    if (not context_)
+        throw std::runtime_error("Context has not been created");
+
+    int r = context_->Execute();
+    std::string msg;
+    switch (r) {
+        case asEXECUTION_FINISHED:
+            return true;
+            break;
+        case asEXECUTION_SUSPENDED:
+            msg = "Execution Suspended";
+            break;
+        case asEXECUTION_ABORTED:
+            msg = "Execution Aborted";
+            break;
+        case asEXECUTION_EXCEPTION :
+            msg = "Execution was terminated with exception";
+            print_exception_info();
+            break;
+        case asEXECUTION_PREPARED :
+            msg = "Context ready for new execution";
+            break;
+        case asEXECUTION_UNINITIALIZED :
+            msg = "Context is not initialized";
+            break;
+        case asEXECUTION_ACTIVE :
+            msg = "Context is currently executing a function call";
+            break;
+        case asEXECUTION_ERROR :
+            msg = "Context is in error state";
+            break;
+        default :
+            msg = "Unknown Error";
+            break;
+    }
+
+    std::cerr << "Execution failed : " << msg << "\n";
+
+    return false;
+}
+
 
 void script_log(std::string &s) {
 

@@ -8,6 +8,26 @@
 
 
 
+ColorScriptEngine::~ColorScriptEngine() {
+    if (color_func_) color_func_->Release();
+    if (prepass_func_) prepass_func_->Release();
+}
+
+bool ColorScriptEngine::has_prepass() {
+    if (checked_prepass) {
+        return prepass_func_ != nullptr;
+    }
+
+    prepass_func_ = find_function("void prepass(result@)");
+    checked_prepass = true;
+    if (prepass_func_)
+        prepass_func_->AddRef();
+
+    return prepass_func_ != nullptr;
+}
+
+
+
 void fractal_params_new(void *memory) {
   // Initialize the pre-allocated memory by calling the
   // object constructor with the placement-new operator
@@ -19,8 +39,12 @@ void fractal_params_del(void *memory) {
   ((fractal_params*)memory)->~fractal_params();
 }
 
-struct script_result : check_results {
+struct script_result : public check_results {
     int refcnt = 1;
+
+    script_result() = default;
+    script_result( check_results const & cr) : check_results(cr)
+    {}
 
     static script_result *Create() {
         return new script_result();
@@ -54,70 +78,60 @@ double script_fmod(double a, double b) {
     return std::fmod(a,b);
 }
 
+double script_erf(double a) {
+    // shim to make sure the compiler
+    // gets the correct version
+    return std::erf(a);
+}
+
 
 bool ColorScriptEngine::call_setup(fractal_params *fp) {
 
 
-    std::cerr << "fp.limit = " << fp->limit << "\n";
-    auto ctx = prepare_context("void setup(fractal_params)");
-    ctx->SetArgObject(0, fp);
-    int r = ctx->Execute();
-    if( r != asEXECUTION_FINISHED ) {
-        std::cerr << "Why didn't that work?\n";
-        return false;
-    }
+    auto *setup_func = find_function("void setup(fractal_params)");
 
-    return true;
+    if (setup_func) {
+        auto ctx = prepare_context("void setup(fractal_params)");
+        ctx->SetArgObject(0, fp);
+
+        return execute_context();
+    } else {
+        return true;
+    }
 }
 
 pixel ColorScriptEngine::call_colorize(check_results &result) {
     if (not color_func_) {
         color_func_ = find_function("color colorize(result@)");
-        if (not color_func_) {
+        if (color_func_) {
+            // we are storing so be sure to take a reference
+            color_func_->AddRef();
+        } else {
             throw std::runtime_error("Could not find colorize() function");
         }
     }
 
+    script_result *r = new script_result(result);
+
     auto ctx = prepare_context(color_func_);
     ctx->SetArgObject(0, &result);
-    int r = ctx->Execute();
-    std::string msg;
-    switch (r) {
-        case asEXECUTION_FINISHED:
-            return *(pixel *)ctx->GetReturnObject();
-            break;
-        case asEXECUTION_SUSPENDED:
-            msg = "Execution Suspended";
-            break;
-        case asEXECUTION_ABORTED:
-            msg = "Execution Aborted";
-            break;
-        case asEXECUTION_EXCEPTION :
-            msg = "Execution was terminated with exception";
-            print_exception_info();
-            break;
-        case asEXECUTION_PREPARED :
-            msg = "Context ready for new execution";
-            break;
-        case asEXECUTION_UNINITIALIZED :
-            msg = "Context is not initialized";
-            break;
-        case asEXECUTION_ACTIVE :
-            msg = "Context is currently executing a function call";
-            break;
-        case asEXECUTION_ERROR :
-            msg = "Context is in error state";
-            break;
-        default :
-            msg = "Unknown Error";
-            break;
+
+    if (execute_context()) {
+        r->Release();
+        return *(pixel *)ctx->GetReturnObject();
+    } else {
+        throw std::runtime_error("colorize call failed");
     }
+}
 
-    std::cerr << "Execution failed : " << msg << "\n";
+void ColorScriptEngine::call_prepass(check_results &results) {
+    if (not has_prepass()) return;
 
-    throw std::runtime_error (msg);
-
-    return pixel{0,0,0};
+    auto ctx = prepare_context(prepass_func_);
+    ctx->SetArgObject(0, &results);
+    if ( not execute_context() ) {
+        throw std::runtime_error("Call to prepass() failed");
+    }
 }
 
 void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
@@ -202,6 +216,9 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     // other math
     r = engine->RegisterGlobalFunction("double fmod(double, double)",
             asFUNCTION(script_fmod), asCALL_CDECL);
+    assert( r >= 0 );
+    r = engine->RegisterGlobalFunction("double erf(double)",
+            asFUNCTION(script_erf), asCALL_CDECL);
     assert( r >= 0 );
 
 }

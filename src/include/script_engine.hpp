@@ -24,6 +24,9 @@ class ScriptEngine {
     asIScriptContext* prepare_context(asIScriptFunction *func);
     void print_exception_info();
 
+  protected:
+    bool execute_context();
+
   private:
     virtual void _register_interface(asIScriptEngine* engine) {} 
 

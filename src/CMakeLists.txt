@@ -16,28 +16,45 @@ add_library(lib_objlib OBJECT)
 
 target_sources(lib_objlib
     PRIVATE
-        "lib/bmp_file.cpp"
-        "lib/compute.cpp"
-        lib/script_engine.cpp
+        lib/bmp_file.cpp
+        lib/compute.cpp
         lib/pixel.cpp
     PUBLIC
         include/bmp_file.hpp
         include/compute.hpp
-        include/script_engine.hpp
         include/pixel.hpp
     )
 
 target_link_libraries(lib_objlib 
     PUBLIC
         lib-include
+    )
+
+
+##
+## script_engine
+##
+add_library(script_engine STATIC)
+
+target_sources(script_engine
+    PRIVATE
+        lib/script_engine.cpp
+    PUBLIC
+        include/script_engine.hpp
+)
+
+target_link_libraries(script_engine
+    PUBLIC
+        lib-include
         angelscript
         angelscript-addons
     )
 
-target_include_directories(lib_objlib
+target_include_directories(script_engine
     PUBLIC
         ../extern/angelscript/angelscript/include
     )
 
+        
 add_subdirectory(proto)
 

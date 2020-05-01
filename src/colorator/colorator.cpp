@@ -130,10 +130,24 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
         std::cerr << "setup call complete\n";
     }
 		
-    auto pixels = std::vector<pixel>{};
 
 	auto rows = data.get_rows();
 
+    if (using_script and se.has_prepass()) {
+        std::cout << "calling prepass\n";
+        for (int i = 0; i < rows.size(); ++i) {
+            auto data_row = rows[i];
+            
+            auto results_array = data_row.results();
+            for (int j = 0; j < data_row.results_size(); ++j) {
+                auto &result = get_result_from_file(results_array[j]);
+
+                se.call_prepass(result);
+            }
+        }
+    }
+
+    auto pixels = std::vector<pixel>{};
     std::cout << "colorizing\n";
 	for (int i = 0; i < rows.size(); ++i) {
 		auto data_row = rows[i];
@@ -146,7 +160,6 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
 
             if (using_script) {
                 pixels.push_back(se.call_colorize(result));
-
             } else {
                 pixels.push_back(color_algo_1(params, result));
             }
