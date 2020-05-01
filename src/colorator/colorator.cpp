@@ -112,6 +112,8 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
 
     
     auto params = get_params_from_file(data);
+
+    std::cerr << "params.limit = " << params.limit << "\n";
     
     auto output_file = BMPFile{clopts.output_file, params.samples_img, 
 		params.samples_real};
@@ -119,30 +121,28 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
     if (clopts.script_file != "") {
         using_script = true;
         se.initialize(clopts.script_file);
-    }
-		
-    auto pixels = std::vector<pixel>{};
 
-	auto rows = data.get_rows();
-
-    if (using_script) {
         std::cerr << "calling setup\n";
         if (not se.call_setup(&params)) {
             std::cerr << "Why didn't that work?\n";
             return;
         }
         std::cerr << "setup call complete\n";
-
     }
-	
+		
+    auto pixels = std::vector<pixel>{};
+
+	auto rows = data.get_rows();
+
     std::cout << "colorizing\n";
 	for (int i = 0; i < rows.size(); ++i) {
 		auto data_row = rows[i];
 		
         pixels.clear();
 
+        auto results_array = data_row.results();
 		for (int j = 0; j < data_row.results_size(); ++j) {
-			auto &result = get_result_from_file(data_row.results()[j]);
+			auto &result = get_result_from_file(results_array[j]);
 
             if (using_script) {
                 pixels.push_back(se.call_colorize(result));

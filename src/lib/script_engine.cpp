@@ -65,6 +65,20 @@ asIScriptContext* ScriptEngine::prepare_context(asIScriptFunction *func) {
     return context_;
 }
 
+void ScriptEngine::print_exception_info() {
+    // Determine the exception that occurred
+    std::cerr << "Script Exception:\n";
+    std::cerr << "desc : " << context_->GetExceptionString() << "\n";
+
+    // Determine the function where the exception occurred
+    auto const *function = context_->GetExceptionFunction();
+    std::cerr << "func : " << function->GetDeclaration() << "\n";
+    std::cerr << "modl : " << function->GetModuleName() << "\n";
+    std::cerr << "sect : " << function->GetScriptSectionName() << "\n";
+
+    std::cerr << "line : " << context_->GetExceptionLineNumber() << "\n";
+}
+
 
 void script_log(std::string &s) {
 
@@ -95,7 +109,7 @@ void ScriptEngine::initialize(std::string const &script) {
     RegisterScriptMathComplex(engine_);
 
     // logger
-    r = engine_->RegisterGlobalFunction("void log(const string &in)", 
+    r = engine_->RegisterGlobalFunction("void logger(const string &in)", 
             asFUNCTION(script_log), asCALL_CDECL); 
     assert( r >= 0 );
 

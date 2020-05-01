@@ -22,6 +22,7 @@ class ScriptEngine {
 
     asIScriptContext* prepare_context(std::string const& func_decl);
     asIScriptContext* prepare_context(asIScriptFunction *func);
+    void print_exception_info();
 
   private:
     virtual void _register_interface(asIScriptEngine* engine) {} 

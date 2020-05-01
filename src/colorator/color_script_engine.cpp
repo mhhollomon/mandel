@@ -44,9 +44,21 @@ pixel script_black() {
     return pixel(0,0,0);
 }
 
+pixel script_hsv(double h, double s, double v) {
+    return pixel(h,s,v);
+}
+
+double script_fmod(double a, double b) {
+    // shim to make sure the compiler
+    // gets the correct version
+    return std::fmod(a,b);
+}
+
 
 bool ColorScriptEngine::call_setup(fractal_params *fp) {
 
+
+    std::cerr << "fp.limit = " << fp->limit << "\n";
     auto ctx = prepare_context("void setup(fractal_params)");
     ctx->SetArgObject(0, fp);
     int r = ctx->Execute();
@@ -69,11 +81,43 @@ pixel ColorScriptEngine::call_colorize(check_results &result) {
     auto ctx = prepare_context(color_func_);
     ctx->SetArgObject(0, &result);
     int r = ctx->Execute();
-    if( r != asEXECUTION_FINISHED ) {
-        throw std::runtime_error("Execution of colorize() did not finish");
+    std::string msg;
+    switch (r) {
+        case asEXECUTION_FINISHED:
+            return *(pixel *)ctx->GetReturnObject();
+            break;
+        case asEXECUTION_SUSPENDED:
+            msg = "Execution Suspended";
+            break;
+        case asEXECUTION_ABORTED:
+            msg = "Execution Aborted";
+            break;
+        case asEXECUTION_EXCEPTION :
+            msg = "Execution was terminated with exception";
+            print_exception_info();
+            break;
+        case asEXECUTION_PREPARED :
+            msg = "Context ready for new execution";
+            break;
+        case asEXECUTION_UNINITIALIZED :
+            msg = "Context is not initialized";
+            break;
+        case asEXECUTION_ACTIVE :
+            msg = "Context is currently executing a function call";
+            break;
+        case asEXECUTION_ERROR :
+            msg = "Context is in error state";
+            break;
+        default :
+            msg = "Unknown Error";
+            break;
     }
 
-    return *(pixel *)ctx->GetReturnObject();
+    std::cerr << "Execution failed : " << msg << "\n";
+
+    throw std::runtime_error (msg);
+
+    return pixel{0,0,0};
 }
 
 void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
@@ -81,8 +125,9 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     
     // fractal_params
     r = engine->RegisterObjectType("fractal_params", sizeof(fractal_params), 
-            asOBJ_VALUE | asGetTypeTraits<fractal_params>()); 
+            asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<fractal_params>()); 
     assert( r >= 0 );
+    /*
     r = engine->RegisterObjectBehaviour("fractal_params", asBEHAVE_CONSTRUCT,
             "void f()", asFUNCTION(fractal_params_new), 
             asCALL_CDECL_OBJLAST); 
@@ -91,6 +136,7 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
             "void f()", asFUNCTION(fractal_params_del), 
             asCALL_CDECL_OBJLAST); 
     assert( r >= 0 );
+    */
 
     r = engine->RegisterObjectProperty("fractal_params", "complex bb_tl",
             asOFFSET(fractal_params,bb_top_left));
@@ -140,13 +186,22 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     // color (pixel)
     std::cerr << "Register color (pixel)\n";
     r = engine->RegisterObjectType("color", sizeof(pixel), 
-            asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<pixel>() | asOBJ_APP_CLASS_ALLINTS); 
+            asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<pixel>() | 
+            asOBJ_APP_CLASS_ALLINTS); 
     assert( r >= 0 );
     r = engine->RegisterGlobalFunction("color white()", 
             asFUNCTION(script_white), asCALL_CDECL); 
     assert( r >= 0 );
     r = engine->RegisterGlobalFunction("color black()", 
             asFUNCTION(script_black), asCALL_CDECL); 
+    assert( r >= 0 );
+    r = engine->RegisterGlobalFunction("color hsv(double, double, double)", 
+            asFUNCTION(script_hsv), asCALL_CDECL); 
+    assert( r >= 0 );
+
+    // other math
+    r = engine->RegisterGlobalFunction("double fmod(double, double)",
+            asFUNCTION(script_fmod), asCALL_CDECL);
     assert( r >= 0 );
 
 }
