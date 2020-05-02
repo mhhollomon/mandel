@@ -32,7 +32,7 @@ void FractalFile::add_metadata( std::complex<double> bb_tl,
     hdr->set_min_iterations(min_iterations);
 }
 
-void FractalFile::write_row(fixed_array<check_results> const &rs) {
+void FractalFile::write_row(fixed_array<fractal_point_data> const &rs) {
     if (not pb_)
        throw std::runtime_error("Must add_metadata() before write_row()");
 

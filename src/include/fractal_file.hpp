@@ -1,17 +1,14 @@
 #if !defined(FRACTAL_FILE_HPP_)
 #define FRACTAL_FILE_HPP_
 
-#include "compute.hpp"
 #include "fractal.pb.h"
-#include "meta_data.hpp"
+#include "fractal_data.hpp"
 
 #include "fixed_array.hpp"
 
 #include <string>
 #include <fstream>
 #include <memory>
-
-using point = std::complex<double>;
 
 
 class FractalFile {
@@ -31,7 +28,7 @@ class FractalFile {
             int max_iter,
             int min_iter);
 
-    void write_row(fixed_array<check_results> const& rs);
+    void write_row(fixed_array<fractal_point_data> const& rs);
 
     void finalize();
 

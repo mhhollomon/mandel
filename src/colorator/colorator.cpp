@@ -4,9 +4,6 @@
 
 #include "color_script_engine.hpp"
 
-// including this for the type coord, point, fractal_params
-#include "compute.hpp"
-
 #include "bmp_file.hpp"
 
 #include <iostream>
@@ -58,10 +55,10 @@ CLIOptions parse_commandline(int argc, char**argv) {
 
 }
 
-check_results & get_result_from_file(fractal::Results const &data) {
-    check_results *retval = new check_results();
+fractal_point_data & get_result_from_file(fractal::Results const &data) {
+    fractal_point_data *retval = new fractal_point_data();
 
-    retval->last_value = point(data.last_value().real(), data.last_value().img());
+    retval->last_value = std::complex<double>(data.last_value().real(), data.last_value().img());
     retval->last_modulus = data.last_modulus();
     retval->iterations = data.iterations();
     retval->diverged = data.diverged();
@@ -70,14 +67,14 @@ check_results & get_result_from_file(fractal::Results const &data) {
 }
 
 
-pixel color_algo_1(fractal_meta_data fp, check_results const &results) {
+pixel color_algo_1(fractal_meta_data fp, fractal_point_data const &results) {
     //
     // Starting at blue, work around the coor wheel so that we are at red
     // Just before diverging.
     // Value is proportional to the count.
     //
     if (results.diverged) {
-        coord smoothed_count = coord(results.iterations) + 1.0 + std::log(std::log2(results.last_modulus));
+        double smoothed_count = double(results.iterations) + 1.0 + std::log(std::log2(results.last_modulus));
         double log_limited_count = std::log(smoothed_count)/std::log(double(fp.limit+1));
         double hue = (4.0f/6.0f) *(1.0 - log_limited_count);
         if (hue < 0.0) hue += 1.0;

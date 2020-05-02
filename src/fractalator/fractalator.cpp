@@ -6,14 +6,14 @@
 
 struct CLIOptions {
     std::string output_file;
-    coord box;
-    coord center_real;
-    coord center_img;
+    double box;
+    double center_real;
+    double center_img;
     int   samples;
-    coord left_top_real;
-    coord left_top_img;
-    coord right_bottom_real;
-    coord right_bottom_img;
+    double left_top_real;
+    double left_top_img;
+    double right_bottom_real;
+    double right_bottom_img;
     int   width;
     int   height;
     int   limit;
@@ -177,8 +177,8 @@ void compute_fractal(CLIOptions const &clopts) {
 
     auto fractal_data = compute_fractal(
             fractal_params{
-                point{ clopts.left_top_real, clopts.left_top_img },
-                point{ clopts.right_bottom_real, clopts.right_bottom_img },
+                std::complex<double>{ clopts.left_top_real, clopts.left_top_img },
+                std::complex<double>{ clopts.right_bottom_real, clopts.right_bottom_img },
                 clopts.limit,
                 clopts.width,
                 clopts.height

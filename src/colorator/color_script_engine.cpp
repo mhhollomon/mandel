@@ -38,11 +38,11 @@ void fractal_params_del(void *memory) {
   ((fractal_meta_data*)memory)->~fractal_meta_data();
 }
 
-struct script_result : public check_results {
+struct script_result : public fractal_point_data {
     int refcnt = 1;
 
     script_result() = default;
-    script_result( check_results const & cr) : check_results(cr)
+    script_result( fractal_point_data const & cr) : fractal_point_data(cr)
     {}
 
     static script_result *Create() {
@@ -99,7 +99,7 @@ bool ColorScriptEngine::call_setup(fractal_meta_data *fp) {
     }
 }
 
-pixel ColorScriptEngine::call_colorize(check_results &result) {
+pixel ColorScriptEngine::call_colorize(fractal_point_data &result) {
     if (not color_func_) {
         color_func_ = find_function("color colorize(result@)");
         if (color_func_) {
@@ -123,7 +123,7 @@ pixel ColorScriptEngine::call_colorize(check_results &result) {
     }
 }
 
-void ColorScriptEngine::call_prepass(check_results &results) {
+void ColorScriptEngine::call_prepass(fractal_point_data &results) {
     if (not has_prepass()) return;
 
     auto ctx = prepare_context(prepass_func_);

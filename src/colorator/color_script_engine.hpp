@@ -3,8 +3,7 @@
 
 #include "script_engine.hpp"
 #include "pixel.hpp"
-#include "meta_data.hpp"
-#include "compute.hpp"
+#include "fractal_data.hpp"
 
 class ColorScriptEngine: public ScriptEngine {
     asIScriptFunction* color_func_   = nullptr;
@@ -17,11 +16,11 @@ class ColorScriptEngine: public ScriptEngine {
 
     bool call_setup(fractal_meta_data *fp);
 
-    pixel call_colorize(check_results &results);
+    pixel call_colorize(fractal_point_data &results);
 
     bool has_prepass();
 
-    void call_prepass(check_results &results);
+    void call_prepass(fractal_point_data &results);
 };
 
 #endif
