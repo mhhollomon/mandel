@@ -3,10 +3,16 @@
 
 #include "compute.hpp"
 #include "fractal.pb.h"
+#include "meta_data.hpp"
+
+#include "fixed_array.hpp"
 
 #include <string>
 #include <fstream>
 #include <memory>
+
+using point = std::complex<double>;
+
 
 class FractalFile {
   private:
@@ -21,15 +27,17 @@ class FractalFile {
             std::complex<double> bb_br,
             int limit,
             int samples_real,
-            int samples_img);
+            int samples_img,
+            int max_iter,
+            int min_iter);
 
-    void write_row(std::vector<check_results> const& rs);
+    void write_row(fixed_array<check_results> const& rs);
 
     void finalize();
 
     static std::unique_ptr<FractalFile> read_from_file(std::string file_name);
     
-    auto get_header() const { return pb_->header(); }
+    fractal_meta_data get_header_info() const;
     auto get_rows() const { return pb_->rows(); }
 
   private:

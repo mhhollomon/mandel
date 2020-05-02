@@ -2,8 +2,9 @@
 #define COLOR_SCRIPT_ENGINE_HPP_
 
 #include "script_engine.hpp"
-#include "compute.hpp"
 #include "pixel.hpp"
+#include "meta_data.hpp"
+#include "compute.hpp"
 
 class ColorScriptEngine: public ScriptEngine {
     asIScriptFunction* color_func_   = nullptr;
@@ -14,7 +15,7 @@ class ColorScriptEngine: public ScriptEngine {
   public:
     ~ColorScriptEngine();
 
-    bool call_setup(fractal_params *fp);
+    bool call_setup(fractal_meta_data *fp);
 
     pixel call_colorize(check_results &results);
 

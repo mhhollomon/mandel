@@ -142,16 +142,27 @@ int main (int argc, char*argv[]) {
 }
 
 
-void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<std::vector<result_slice>> data) {
+void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<fixed_array<result_slice>> data) {
     std::cout << "Writing File\n";
 
+    int max_iter = 0;
+    int min_iter = clopts.limit;
+
+    for (auto const & data_row : *data) {
+        for (auto const & res : *data_row) {
+            if (res.iterations > max_iter) max_iter = res.iterations;
+            if (res.iterations < min_iter) min_iter = res.iterations;
+        }
+    }
     auto output_file = FractalFile{clopts.output_file};
     output_file.add_metadata(
                 { clopts.left_top_real, clopts.left_top_img },
                 { clopts.right_bottom_real, clopts.right_bottom_img },
                 clopts.limit,
                 clopts.width,
-                clopts.height
+                clopts.height,
+                max_iter,
+                min_iter
             );
 
     for (auto const & data_row : *data) {

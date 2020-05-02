@@ -3,7 +3,7 @@
 
 #include <complex>
 #include <memory>
-#include <vector>
+#include "fixed_array.hpp"
 
 using coord = double;
 
@@ -32,13 +32,13 @@ struct fractal_params {
 
 check_results mandelbrot_test(point test_point, int limit);
 
-using result_slice = std::shared_ptr<std::vector<check_results> >;
+using result_slice = std::shared_ptr<fixed_array<check_results> >;
 
 void compute_slice(result_slice rs, int limit, 
         int start_index, int end_index,
         coord base_img, coord base_real, coord real_increment);
 
-std::shared_ptr<std::vector<result_slice>> compute_fractal(fractal_params p);
+std::shared_ptr<fixed_array<result_slice>> compute_fractal(fractal_params p);
 
 
 #endif

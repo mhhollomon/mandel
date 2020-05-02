@@ -14,6 +14,8 @@ message Header {
   int32 real_samples = 5;
   int32 img_samples = 6;
   int32 limit = 7;
+  int32 max_iterations = 8;
+  int32 min_iterations = 9;
 }
 
 message Results {

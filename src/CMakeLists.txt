@@ -23,6 +23,7 @@ target_sources(lib_objlib
         include/bmp_file.hpp
         include/compute.hpp
         include/pixel.hpp
+        include/fixed_array.hpp
     )
 
 target_link_libraries(lib_objlib 

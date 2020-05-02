@@ -58,21 +58,6 @@ CLIOptions parse_commandline(int argc, char**argv) {
 
 }
 
-fractal_params get_params_from_file(FractalFile const &data) {
-	
-	auto header = data.get_header();
-	
-	fractal_params p;
-	
-	p.bb_top_left = point{header.bb_tl().real(), header.bb_tl().img()};
-	p.bb_bottom_right = point{header.bb_br().real(), header.bb_br().img()};
-	p.limit = header.limit();
-	p.samples_real = header.real_samples();
-	p.samples_img = header.img_samples();
-	
-	return p;
-}
-
 check_results & get_result_from_file(fractal::Results const &data) {
     check_results *retval = new check_results();
 
@@ -85,7 +70,7 @@ check_results & get_result_from_file(fractal::Results const &data) {
 }
 
 
-pixel color_algo_1(fractal_params fp, check_results const &results) {
+pixel color_algo_1(fractal_meta_data fp, check_results const &results) {
     //
     // Starting at blue, work around the coor wheel so that we are at red
     // Just before diverging.
@@ -111,7 +96,7 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
     bool using_script = false;
 
     
-    auto params = get_params_from_file(data);
+    auto params = data.get_header_info();
 
     std::cerr << "params.limit = " << params.limit << "\n";
     

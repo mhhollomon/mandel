@@ -1,6 +1,5 @@
 #include "color_script_engine.hpp"
 
-#include "compute.hpp"
 #include "pixel.hpp"
 
 #include <iostream>
@@ -31,12 +30,12 @@ bool ColorScriptEngine::has_prepass() {
 void fractal_params_new(void *memory) {
   // Initialize the pre-allocated memory by calling the
   // object constructor with the placement-new operator
-  new(memory) fractal_params();
+  new(memory) fractal_meta_data();
 }
  
 void fractal_params_del(void *memory) {
   // Uninitialize the memory by calling the object destructor
-  ((fractal_params*)memory)->~fractal_params();
+  ((fractal_meta_data*)memory)->~fractal_meta_data();
 }
 
 struct script_result : public check_results {
@@ -85,7 +84,7 @@ double script_erf(double a) {
 }
 
 
-bool ColorScriptEngine::call_setup(fractal_params *fp) {
+bool ColorScriptEngine::call_setup(fractal_meta_data *fp) {
 
 
     auto *setup_func = find_function("void setup(fractal_params)");
@@ -138,8 +137,8 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     int r;
     
     // fractal_params
-    r = engine->RegisterObjectType("fractal_params", sizeof(fractal_params), 
-            asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<fractal_params>()); 
+    r = engine->RegisterObjectType("fractal_params", sizeof(fractal_meta_data), 
+            asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<fractal_meta_data>()); 
     assert( r >= 0 );
     /*
     r = engine->RegisterObjectBehaviour("fractal_params", asBEHAVE_CONSTRUCT,
@@ -153,19 +152,25 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     */
 
     r = engine->RegisterObjectProperty("fractal_params", "complex bb_tl",
-            asOFFSET(fractal_params,bb_top_left));
+            asOFFSET(fractal_meta_data,bb_top_left));
     assert( r >= 0 );
     r = engine->RegisterObjectProperty("fractal_params", "complex bb_br",
-            asOFFSET(fractal_params,bb_bottom_right));
+            asOFFSET(fractal_meta_data,bb_bottom_right));
     assert( r >= 0 );
     r = engine->RegisterObjectProperty("fractal_params", "int limit",
-            asOFFSET(fractal_params,limit));
+            asOFFSET(fractal_meta_data,limit));
     assert( r >= 0 );
     r = engine->RegisterObjectProperty("fractal_params", "int samples_real",
-            asOFFSET(fractal_params,samples_real));
+            asOFFSET(fractal_meta_data,samples_real));
     assert( r >= 0 );
     r = engine->RegisterObjectProperty("fractal_params", "int samples_img",
-            asOFFSET(fractal_params,samples_img));
+            asOFFSET(fractal_meta_data,samples_img));
+    assert( r >= 0 );
+    r = engine->RegisterObjectProperty("fractal_params", "int max_iterations",
+            asOFFSET(fractal_meta_data,max_iterations));
+    assert( r >= 0 );
+    r = engine->RegisterObjectProperty("fractal_params", "int min_iterations",
+            asOFFSET(fractal_meta_data,min_iterations));
     assert( r >= 0 );
 
     // result

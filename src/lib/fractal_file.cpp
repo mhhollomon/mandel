@@ -4,7 +4,9 @@ void FractalFile::add_metadata( std::complex<double> bb_tl,
             std::complex<double> bb_br,
             int limit,
             int samples_real,
-            int samples_img) {
+            int samples_img,
+            int max_iterations,
+            int min_iterations) {
 
     if (pb_) {
         throw std::runtime_error("Metadata already added");
@@ -26,9 +28,11 @@ void FractalFile::add_metadata( std::complex<double> bb_tl,
     hdr->set_limit(limit);
     hdr->set_real_samples(samples_real);
     hdr->set_img_samples(samples_img);
+    hdr->set_max_iterations(max_iterations);
+    hdr->set_min_iterations(min_iterations);
 }
 
-void FractalFile::write_row(std::vector<check_results> const &rs) {
+void FractalFile::write_row(fixed_array<check_results> const &rs) {
     if (not pb_)
        throw std::runtime_error("Must add_metadata() before write_row()");
 
@@ -87,4 +91,20 @@ void FractalFile::read_data() {
 
     pb_ = std::make_unique<fractal::File>();
     pb_->ParseFromIstream(&input);
+}
+
+fractal_meta_data FractalFile::get_header_info() const {
+    auto hdr = pb_->header();
+
+    fractal_meta_data retval;
+
+    retval.bb_top_left = { hdr.bb_tl().real(), hdr.bb_tl().img() };
+    retval.bb_bottom_right =  { hdr.bb_br().real(), hdr.bb_br().img() };
+    retval.limit =  hdr.limit();
+    retval.samples_real = hdr.real_samples();
+    retval.samples_img  = hdr.img_samples();
+    retval.max_iterations = hdr.max_iterations();
+    retval.min_iterations = hdr.min_iterations();
+
+    return retval;
 }
