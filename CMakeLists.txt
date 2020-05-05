@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_compile_options("-g;-O0;-Wall;-pedantic")
+add_compile_options("-g;-O1;-Wall;-pedantic")
 
 add_subdirectory(extern)
 
@@ -52,8 +52,10 @@ add_executable(fractalator)
 
 target_sources(fractalator
     PRIVATE
-        "src/fractalator/fractalator.cpp"
-        "src/include/compute.hpp"
+        src/fractalator/fractalator.cpp
+        src/include/fractal_file.hpp
+        src/include/compute.hpp
+        src/include/work_queue.hpp
     )
 
 target_link_libraries(fractalator

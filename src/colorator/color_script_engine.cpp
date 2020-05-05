@@ -17,7 +17,7 @@ bool ColorScriptEngine::has_prepass() {
         return prepass_func_ != nullptr;
     }
 
-    prepass_func_ = find_function("void prepass(result@)");
+    prepass_func_ = find_function("void prepass(point_data@)");
     checked_prepass = true;
     if (prepass_func_)
         prepass_func_->AddRef();
@@ -38,15 +38,15 @@ void fractal_params_del(void *memory) {
   ((fractal_meta_data*)memory)->~fractal_meta_data();
 }
 
-struct script_result : public fractal_point_data {
+struct script_point_data : public fractal_point_data {
     int refcnt = 1;
 
-    script_result() = default;
-    script_result( fractal_point_data const & cr) : fractal_point_data(cr)
+    script_point_data() = default;
+    script_point_data( fractal_point_data const & cr) : fractal_point_data(cr)
     {}
 
-    static script_result *Create() {
-        return new script_result();
+    static script_point_data *Create() {
+        return new script_point_data();
     }
 
     void Release() {
@@ -87,10 +87,10 @@ double script_erf(double a) {
 bool ColorScriptEngine::call_setup(fractal_meta_data *fp) {
 
 
-    auto *setup_func = find_function("void setup(fractal_params)");
+    auto *setup_func = find_function("void setup(meta_data)");
 
     if (setup_func) {
-        auto ctx = prepare_context("void setup(fractal_params)");
+        auto ctx = prepare_context("void setup(meta_data)");
         ctx->SetArgObject(0, fp);
 
         return execute_context();
@@ -99,9 +99,9 @@ bool ColorScriptEngine::call_setup(fractal_meta_data *fp) {
     }
 }
 
-pixel ColorScriptEngine::call_colorize(fractal_point_data &result) {
+pixel ColorScriptEngine::call_colorize(fractal_point_data &pd) {
     if (not color_func_) {
-        color_func_ = find_function("color colorize(result@)");
+        color_func_ = find_function("color colorize(point_data@)");
         if (color_func_) {
             // we are storing so be sure to take a reference
             color_func_->AddRef();
@@ -110,10 +110,10 @@ pixel ColorScriptEngine::call_colorize(fractal_point_data &result) {
         }
     }
 
-    script_result *r = new script_result(result);
+    script_point_data *r = new script_point_data(pd);
 
     auto ctx = prepare_context(color_func_);
-    ctx->SetArgObject(0, &result);
+    ctx->SetArgObject(0, r);
 
     if (execute_context()) {
         r->Release();
@@ -123,12 +123,15 @@ pixel ColorScriptEngine::call_colorize(fractal_point_data &result) {
     }
 }
 
-void ColorScriptEngine::call_prepass(fractal_point_data &results) {
+void ColorScriptEngine::call_prepass(fractal_point_data &pd) {
     if (not has_prepass()) return;
 
+    script_point_data *r = new script_point_data(pd);
     auto ctx = prepare_context(prepass_func_);
-    ctx->SetArgObject(0, &results);
-    if ( not execute_context() ) {
+    ctx->SetArgObject(0, r);
+    if ( execute_context() ) {
+        r->Release();
+    } else {
         throw std::runtime_error("Call to prepass() failed");
     }
 }
@@ -136,70 +139,70 @@ void ColorScriptEngine::call_prepass(fractal_point_data &results) {
 void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     int r;
     
-    // fractal_params
-    r = engine->RegisterObjectType("fractal_params", sizeof(fractal_meta_data), 
+    // meta_data
+    r = engine->RegisterObjectType("meta_data", sizeof(fractal_meta_data), 
             asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<fractal_meta_data>()); 
     assert( r >= 0 );
     /*
-    r = engine->RegisterObjectBehaviour("fractal_params", asBEHAVE_CONSTRUCT,
-            "void f()", asFUNCTION(fractal_params_new), 
+    r = engine->RegisterObjectBehaviour("meta_data", asBEHAVE_CONSTRUCT,
+            "void f()", asFUNCTION(meta_data_new), 
             asCALL_CDECL_OBJLAST); 
     assert( r >= 0 );
-    r = engine->RegisterObjectBehaviour("fractal_params", asBEHAVE_DESTRUCT, 
-            "void f()", asFUNCTION(fractal_params_del), 
+    r = engine->RegisterObjectBehaviour("meta_data", asBEHAVE_DESTRUCT, 
+            "void f()", asFUNCTION(meta_data_del), 
             asCALL_CDECL_OBJLAST); 
     assert( r >= 0 );
     */
 
-    r = engine->RegisterObjectProperty("fractal_params", "complex bb_tl",
+    r = engine->RegisterObjectProperty("meta_data", "complex bb_tl",
             asOFFSET(fractal_meta_data,bb_top_left));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("fractal_params", "complex bb_br",
+    r = engine->RegisterObjectProperty("meta_data", "complex bb_br",
             asOFFSET(fractal_meta_data,bb_bottom_right));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("fractal_params", "int limit",
+    r = engine->RegisterObjectProperty("meta_data", "int limit",
             asOFFSET(fractal_meta_data,limit));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("fractal_params", "int samples_real",
+    r = engine->RegisterObjectProperty("meta_data", "int samples_real",
             asOFFSET(fractal_meta_data,samples_real));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("fractal_params", "int samples_img",
+    r = engine->RegisterObjectProperty("meta_data", "int samples_img",
             asOFFSET(fractal_meta_data,samples_img));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("fractal_params", "int max_iterations",
+    r = engine->RegisterObjectProperty("meta_data", "int max_iterations",
             asOFFSET(fractal_meta_data,max_iterations));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("fractal_params", "int min_iterations",
+    r = engine->RegisterObjectProperty("meta_data", "int min_iterations",
             asOFFSET(fractal_meta_data,min_iterations));
     assert( r >= 0 );
 
-    // result
-    r = engine->RegisterObjectType("result", 0, asOBJ_REF); 
+    // point_data
+    r = engine->RegisterObjectType("point_data", 0, asOBJ_REF); 
     assert( r >= 0 );
 
     // TODO: Maybe don't let script create?
-    r = engine->RegisterObjectBehaviour("result", asBEHAVE_FACTORY, 
-            "result@ f()", asFUNCTION(script_result::Create), asCALL_CDECL); 
+    r = engine->RegisterObjectBehaviour("point_data", asBEHAVE_FACTORY, 
+            "point_data@ f()", asFUNCTION(script_point_data::Create), asCALL_CDECL); 
     assert( r >= 0 );
 
-    r = engine->RegisterObjectBehaviour("result", asBEHAVE_ADDREF, 
-            "void f()", asMETHOD(script_result,AddRef), asCALL_THISCALL); 
+    r = engine->RegisterObjectBehaviour("point_data", asBEHAVE_ADDREF, 
+            "void f()", asMETHOD(script_point_data,AddRef), asCALL_THISCALL); 
     assert( r >= 0 );
 
-    r = engine->RegisterObjectBehaviour("result", asBEHAVE_RELEASE, 
-            "void f()", asMETHOD(script_result,Release), asCALL_THISCALL); 
+    r = engine->RegisterObjectBehaviour("point_data", asBEHAVE_RELEASE, 
+            "void f()", asMETHOD(script_point_data,Release), asCALL_THISCALL); 
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("result", "complex last_value",
-            asOFFSET(script_result,last_value));
+    r = engine->RegisterObjectProperty("point_data", "complex last_value",
+            asOFFSET(script_point_data,last_value));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("result", "double last_modulus",
-            asOFFSET(script_result,last_modulus));
+    r = engine->RegisterObjectProperty("point_data", "double last_modulus",
+            asOFFSET(script_point_data,last_modulus));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("result", "int iterations",
-            asOFFSET(script_result,iterations));
+    r = engine->RegisterObjectProperty("point_data", "int iterations",
+            asOFFSET(script_point_data,iterations));
     assert( r >= 0 );
-    r = engine->RegisterObjectProperty("result", "bool diverged",
-            asOFFSET(script_result,diverged));
+    r = engine->RegisterObjectProperty("point_data", "bool diverged",
+            asOFFSET(script_point_data,diverged));
     assert( r >= 0 );
 
     // color (pixel)

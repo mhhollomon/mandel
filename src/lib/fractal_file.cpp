@@ -1,79 +1,83 @@
 #include "fractal_file.hpp"
 
-void FractalFile::add_metadata( std::complex<double> bb_tl,
-            std::complex<double> bb_br,
-            int limit,
-            int samples_real,
-            int samples_img,
-            int max_iterations,
-            int min_iterations) {
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/complex.hpp>
 
-    if (pb_) {
+const unsigned SIGNATURE = 0x41434652;
+const unsigned VERSION   = 0x00010001;
+
+
+template<class Archive> void serialize(Archive & archive,
+               fractal_meta_data & fmd)
+{
+    archive( fmd.bb_top_left, fmd.bb_bottom_right, fmd.limit,
+            fmd.samples_real, fmd.samples_img,
+            fmd.max_iterations, fmd.min_iterations);
+}
+
+template<class Archive> void serialize(Archive & archive,
+               fractal_point_data & fpd)
+{
+    archive(fpd.last_value, fpd.last_modulus, fpd.iterations, fpd.diverged);
+}
+
+void FractalFile::add_metadata( fractal_meta_data const &fmd ) {
+
+    if (has_meta_) {
         throw std::runtime_error("Metadata already added");
     }
 
-    pb_ = std::make_unique<fractal::File>();
+    metadata_ = fmd;
 
-    auto *hdr = pb_->mutable_header();
-    hdr->set_signature(0x46520100);
+    fstrm_.exceptions(std::ofstream::failbit | std::ofstream::badbit );
+    fstrm_.open(file_name_, 
+            std::ios::out|std::ofstream::trunc|std::ofstream::binary);
 
-    auto *bb = hdr->mutable_bb_tl();
-    bb->set_real(bb_tl.real());
-    bb->set_img(bb_tl.imag());
+    fstrm_.write(reinterpret_cast<const char*>(&SIGNATURE), sizeof(SIGNATURE));
+    fstrm_.write(reinterpret_cast<const char*>(&VERSION), sizeof(VERSION));
 
-    bb = hdr->mutable_bb_br();
-    bb->set_real(bb_br.real());
-    bb->set_img(bb_br.imag());
+    cereal::BinaryOutputArchive oarchive(fstrm_);
 
-    hdr->set_limit(limit);
-    hdr->set_real_samples(samples_real);
-    hdr->set_img_samples(samples_img);
-    hdr->set_max_iterations(max_iterations);
-    hdr->set_min_iterations(min_iterations);
+    oarchive(fmd);
+
+    has_meta_ = true;
+
 }
 
-void FractalFile::write_row(fixed_array<fractal_point_data> const &rs) {
-    if (not pb_)
+void FractalFile::write_row(point_row const &rs) {
+    if (not has_meta_)
        throw std::runtime_error("Must add_metadata() before write_row()");
 
-    auto expected_rows = pb_->header().img_samples();
-    auto current_count = pb_->rows_size();
+    auto expected_rows = metadata_.samples_img;
 
-    if (current_count >= expected_rows)
+    if (row_count_ >= expected_rows)
         throw std::runtime_error("Already have all the expected rows\n");
 
-    auto expected_columns =  pb_->header().real_samples();
+    auto expected_columns =  metadata_.samples_real;
     if (rs.size() != expected_columns)
         throw std::runtime_error("Incorrect number of results in vector\n");
 
-    auto row = pb_->add_rows();
-    for (auto const & res : rs) {
-        auto *msg = row->add_results();
-        auto *lv = msg->mutable_last_value();
-        lv->set_real(res.last_value.real());
-        lv->set_img(res.last_value.imag());
-        msg->set_last_modulus(res.last_modulus);
-        msg->set_iterations(res.iterations);
-        msg->set_diverged(res.diverged);
-    }
+    row_count_ += 1;
 
+    cereal::BinaryOutputArchive oarchive(fstrm_);
+
+    for (auto const &fpd : rs) {
+        oarchive(fpd);
+    }
 }
 
 
 void FractalFile::finalize() {
-    if (not pb_)
+    if (not has_meta_)
        throw std::runtime_error("Must add_metadata() before write_row()");
 
-    auto expected_rows = pb_->header().img_samples();
-    auto current_count = pb_->rows_size();
+    auto expected_rows = metadata_.samples_img;
 
-    if (current_count != expected_rows)
-        throw std::runtime_error("incorrect numberof rows - nothing written\n");
+    if (row_count_ != expected_rows)
+        throw std::runtime_error("incorrect numberof rows.\n");
 
-    std::fstream output(file_name_, 
-            std::ios::out | std::ios::trunc | std::ios::binary);
 
-    pb_->SerializeToOstream(&output);
+    fstrm_.close();
 }
 
 std::unique_ptr<FractalFile> FractalFile::read_from_file(std::string file_name) {
@@ -86,25 +90,45 @@ std::unique_ptr<FractalFile> FractalFile::read_from_file(std::string file_name) 
 }
 
 void FractalFile::read_data() {
-    std::fstream input (file_name_,
+    fstrm_.open(file_name_,
             std::ios::in | std::ios::binary);
 
-    pb_ = std::make_unique<fractal::File>();
-    pb_->ParseFromIstream(&input);
+    // TODO - read the signature and version
+    //
+    char buffer[sizeof(SIGNATURE)+sizeof(VERSION)+1];
+
+    fstrm_.read(buffer, sizeof(SIGNATURE));
+    if (fstrm_.gcount() != sizeof(SIGNATURE))
+       throw std::runtime_error("Could not read file sig");
+    if  ( *(reinterpret_cast<unsigned*>(buffer)) != SIGNATURE) 
+        throw std::runtime_error("Sig does not match");
+    fstrm_.read(buffer, sizeof(VERSION));
+
+
+    cereal::BinaryInputArchive iarchive(fstrm_);
+    iarchive(metadata_);
+    has_meta_ = true;
+
+    int expected_rows = metadata_.samples_img;
+    int expected_cols = metadata_.samples_real;
+
+    rows_ = std::make_shared<point_grid>(expected_rows);
+
+    for (int i = 0; i < expected_rows; ++i) {
+        auto new_row = std::make_shared<point_row>(expected_cols);
+        for (int j = 0; j < expected_cols; ++j) {
+            iarchive((*new_row)[j]);
+        }
+
+        (*rows_)[i] = new_row;
+
+    }
+
 }
 
-fractal_meta_data FractalFile::get_header_info() const {
-    auto hdr = pb_->header();
+fractal_meta_data FractalFile::get_meta_data() const {
+    if (not has_meta_)
+        throw std::runtime_error("No meta data is available\n");
 
-    fractal_meta_data retval;
-
-    retval.bb_top_left = { hdr.bb_tl().real(), hdr.bb_tl().img() };
-    retval.bb_bottom_right =  { hdr.bb_br().real(), hdr.bb_br().img() };
-    retval.limit =  hdr.limit();
-    retval.samples_real = hdr.real_samples();
-    retval.samples_img  = hdr.img_samples();
-    retval.max_iterations = hdr.max_iterations();
-    retval.min_iterations = hdr.min_iterations();
-
-    return retval;
+    return metadata_;
 }

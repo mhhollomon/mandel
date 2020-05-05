@@ -1,6 +1,7 @@
 #include "compute.hpp"
 
 #include "fractal_file.hpp"
+#include "work_queue.hpp"
 
 #include "cxxopts.hpp"
 
@@ -21,6 +22,8 @@ struct CLIOptions {
     bool  help = false;
     bool  has_center_real;
     bool  has_center_img;
+    bool  has_jobs = false;
+    int   jobs;
 
 };
 
@@ -46,6 +49,7 @@ CLIOptions parse_commandline(int argc, char**argv) {
             ("cr", "Center Real", cxxopts::value(clopts.center_real))
             ("ci", "Center Imaginary", cxxopts::value(clopts.center_img))
             ("limit", "Number of iterations to check divergence", cxxopts::value(clopts.limit)->default_value("1000"))
+            ("j,jobs", "Number of parallel threads to use", cxxopts::value(clopts.jobs)->default_value("0"))
             ;
 
 
@@ -59,6 +63,7 @@ CLIOptions parse_commandline(int argc, char**argv) {
 
         clopts.has_center_real = (results.count("cr") > 0);
         clopts.has_center_img  = (results.count("ci") > 0);
+        clopts.has_jobs        = (results.count("jobs") > 0);
 
     } catch (const cxxopts::OptionException& e) {
         std::cerr << "Well, that didn't work: " << e.what() << "\n";
@@ -150,19 +155,22 @@ void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<fixed_array<re
 
     for (auto const & data_row : *data) {
         for (auto const & res : *data_row) {
-            if (res.iterations > max_iter) max_iter = res.iterations;
-            if (res.iterations < min_iter) min_iter = res.iterations;
+            if (res.diverged) {
+                //std::cerr << res.iterations << " " << max_iter << " " << min_iter << "\n";
+                if (res.iterations > max_iter) max_iter = res.iterations;
+                if (res.iterations < min_iter) min_iter = res.iterations;
+            }
         }
     }
     auto output_file = FractalFile{clopts.output_file};
     output_file.add_metadata(
-                { clopts.left_top_real, clopts.left_top_img },
+            { { clopts.left_top_real, clopts.left_top_img },
                 { clopts.right_bottom_real, clopts.right_bottom_img },
                 clopts.limit,
                 clopts.width,
                 clopts.height,
                 max_iter,
-                min_iter
+                min_iter }
             );
 
     for (auto const & data_row : *data) {
@@ -175,15 +183,25 @@ void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<fixed_array<re
 void compute_fractal(CLIOptions const &clopts) {
     std::cout << "Computing fractal\n";
 
-    auto fractal_data = compute_fractal(
-            fractal_params{
+    std::shared_ptr<fixed_array<result_slice>> fractal_data;
+
+    auto fp = fractal_params{
                 std::complex<double>{ clopts.left_top_real, clopts.left_top_img },
                 std::complex<double>{ clopts.right_bottom_real, clopts.right_bottom_img },
                 clopts.limit,
                 clopts.width,
                 clopts.height
-                }
-        );
+            };
+
+    if (not clopts.has_jobs or clopts.jobs == 0) {
+        std::cerr << "Serial computation\n";
+        fractal_data = compute_fractal(fp);
+    } else {
+        std::cerr << "Parallel with " << clopts.jobs << " jobs\n";
+        fractal_work_queue wq(clopts.jobs*2);
+        fractal_data = compute_fractal(fp, wq, clopts.jobs);
+    } 
+
 
     write_fractal_file(clopts, fractal_data);
 }

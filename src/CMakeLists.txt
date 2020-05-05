@@ -7,7 +7,9 @@ cmake_minimum_required(VERSION 3.13)
 add_library(lib-include INTERFACE)
 
 target_include_directories(lib-include
-    INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    INTERFACE include)
+
+    #    INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 ##
 ## lib_objlib
@@ -24,11 +26,16 @@ target_sources(lib_objlib
         include/compute.hpp
         include/pixel.hpp
         include/fixed_array.hpp
+        include/work_queue.hpp
     )
 
 target_link_libraries(lib_objlib 
     PUBLIC
         lib-include
+    )
+target_include_directories(lib_objlib
+    PUBLIC
+        cereal
     )
 
 

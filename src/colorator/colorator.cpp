@@ -93,7 +93,7 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
     bool using_script = false;
 
     
-    auto params = data.get_header_info();
+    auto params = data.get_meta_data();
 
     std::cerr << "params.limit = " << params.limit << "\n";
     
@@ -117,33 +117,29 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
 
     if (using_script and se.has_prepass()) {
         std::cout << "calling prepass\n";
-        for (int i = 0; i < rows.size(); ++i) {
-            auto data_row = rows[i];
+        for (int i = 0; i < rows->size(); ++i) {
+            auto data_row = (*rows)[i];
             
-            auto results_array = data_row.results();
-            for (int j = 0; j < data_row.results_size(); ++j) {
-                auto &result = get_result_from_file(results_array[j]);
+            for (int j = 0; j < data_row->size(); ++j) {
 
-                se.call_prepass(result);
+                se.call_prepass((*data_row)[j]);
             }
         }
     }
 
     auto pixels = std::vector<pixel>{};
     std::cout << "colorizing\n";
-	for (int i = 0; i < rows.size(); ++i) {
-		auto data_row = rows[i];
+	for (int i = 0; i < rows->size(); ++i) {
+        auto data_row = (*rows)[i];
 		
         pixels.clear();
 
-        auto results_array = data_row.results();
-		for (int j = 0; j < data_row.results_size(); ++j) {
-			auto &result = get_result_from_file(results_array[j]);
+        for (int j = 0; j < data_row->size(); ++j) {
 
             if (using_script) {
-                pixels.push_back(se.call_colorize(result));
+                pixels.push_back(se.call_colorize((*data_row)[j]));
             } else {
-                pixels.push_back(color_algo_1(params, result));
+                pixels.push_back(color_algo_1(params, (*data_row)[j]));
             }
         }
 

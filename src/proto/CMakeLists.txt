@@ -21,6 +21,7 @@ target_link_libraries(fractal-file
     PUBLIC
         ${Protobuf_LIBRARIES}
         lib-include
+        cereal
     )
 
 target_include_directories(fractal-file

@@ -8,34 +8,31 @@
 
 #include <string>
 #include <fstream>
-#include <memory>
 
 
 class FractalFile {
   private:
     std::string file_name_;
-    std::unique_ptr<fractal::File> pb_;
+    fractal_meta_data metadata_;
+    bool has_meta_ = false;
+    std::shared_ptr<point_grid> rows_;
+    std::fstream fstrm_;
+    int row_count_ = 0;
 
   public:
     FractalFile(std::string file_name) noexcept : file_name_{file_name} {};
     ~FractalFile() = default;
 
-    void add_metadata( std::complex<double> bb_tl,
-            std::complex<double> bb_br,
-            int limit,
-            int samples_real,
-            int samples_img,
-            int max_iter,
-            int min_iter);
+    void add_metadata( fractal_meta_data const &fmd );
 
-    void write_row(fixed_array<fractal_point_data> const& rs);
+    void write_row(point_row const& rs);
 
     void finalize();
 
     static std::unique_ptr<FractalFile> read_from_file(std::string file_name);
     
-    fractal_meta_data get_header_info() const;
-    auto get_rows() const { return pb_->rows(); }
+    fractal_meta_data get_meta_data() const;
+    std::shared_ptr<point_grid>  const & get_rows() const { return rows_; }
 
   private:
     void read_data();

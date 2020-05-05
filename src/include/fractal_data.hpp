@@ -1,7 +1,9 @@
 #if not defined(MANDEL_FRACTAL_DATA_HPP_)
 #define MANDEL_FRACTAL_DATA_HPP_
 
+#include "fixed_array.hpp"
 #include <complex>
+#include <memory>
 
 struct fractal_meta_data {
     std::complex<double> bb_top_left;
@@ -23,5 +25,9 @@ struct fractal_point_data {
     fractal_point_data() = default;
     fractal_point_data(fractal_point_data const &o) = default;
 };
+
+using point_row = fixed_array<fractal_point_data>;
+
+using point_grid = fixed_array<std::shared_ptr<point_row>>;
 
 #endif

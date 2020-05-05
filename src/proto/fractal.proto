@@ -25,11 +25,8 @@ message Results {
   bool   diverged = 4;
 }
 
+// should have real_samples # of results in a row
+// should have img_samples # of rows in the file
 message Row {
-  repeated Results results = 1;
-}
-
-message File {
-  Header header = 1;
-  repeated Row rows = 2;
+  repeated Results results = 2;
 }
