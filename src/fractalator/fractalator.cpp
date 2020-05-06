@@ -5,8 +5,13 @@
 
 #include "cxxopts.hpp"
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 struct CLIOptions {
     std::string output_file;
+    std::string aspect;
     double box;
     double center_real;
     double center_img;
@@ -27,46 +32,59 @@ struct CLIOptions {
 
 };
 
+enum anchor_mode {
+    TOP_LEFT,
+    BOTTOM_RIGHT,
+    CENTER
+};
+
 CLIOptions parse_commandline(int argc, char**argv) {
 
     CLIOptions clopts;
 
-    try {
-        cxxopts::Options options("mandel", "Mandelbrot Generator");
+    cxxopts::Options options("mandel", "Mandelbrot Generator");
 
-        options.add_options()
-            ("h,help", "Print help message", cxxopts::value(clopts.help))
-            ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
-			("d,debug", "Print debug information", cxxopts::value(clopts.debug))
-            ("s,samples", "Number of samples in each dimension", cxxopts::value(clopts.samples)->default_value("0"))
-            ("w,width", "Number of samples along the real axis", cxxopts::value(clopts.width)->default_value("100"))
-            ("h,height", "Number of samples along the imaginary axis", cxxopts::value(clopts.height)->default_value("100"))
-            ("ltr", "Left top real", cxxopts::value(clopts.left_top_real)->default_value("-2.0"))
-            ("lti", "Left top imaginary", cxxopts::value(clopts.left_top_img)->default_value("2.0"))
-            ("rbr", "Right bottom real", cxxopts::value(clopts.right_bottom_real)->default_value("2.0"))
-            ("rbi", "Right bottom imaginary", cxxopts::value(clopts.right_bottom_img)->default_value("-2.0"))
-            ("box", "Length of box - if given, replaces rbr and rbi", cxxopts::value(clopts.box)->default_value("0.0"))
-            ("cr", "Center Real", cxxopts::value(clopts.center_real))
-            ("ci", "Center Imaginary", cxxopts::value(clopts.center_img))
-            ("l,limit", "Number of iterations to check divergence", cxxopts::value(clopts.limit)->default_value("1000"))
-            ("j,jobs", "Number of parallel threads to use", cxxopts::value(clopts.jobs)->default_value("0"))
-            ;
+    options.add_options()
+        ("h,help", "Print help message", cxxopts::value(clopts.help))
+        ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
+        ("d,debug", "Print debug information", cxxopts::value(clopts.debug))
+        ("s,samples", "Number of samples in each dimension", cxxopts::value(clopts.samples)->default_value("0"))
+        ("width", "Number of samples along the real axis", cxxopts::value(clopts.width)->default_value("0"))
+        ("height", "Number of samples along the imaginary axis", cxxopts::value(clopts.height)->default_value("0"))
+        ("aspect", "WxH samples along the axis - also computes new height", cxxopts::value(clopts.aspect))
+        ("ltr", "Left top real", cxxopts::value(clopts.left_top_real)->default_value("-2.0"))
+        ("lti", "Left top imaginary", cxxopts::value(clopts.left_top_img)->default_value("2.0"))
+        ("rbr", "Right bottom real", cxxopts::value(clopts.right_bottom_real)->default_value("2.0"))
+        ("rbi", "Right bottom imaginary", cxxopts::value(clopts.right_bottom_img)->default_value("-2.0"))
+        ("box", "Length of box - if given, replaces rbr and rbi", cxxopts::value(clopts.box)->default_value("0.0"))
+        ("cr", "Center Real", cxxopts::value(clopts.center_real))
+        ("ci", "Center Imaginary", cxxopts::value(clopts.center_img))
+        ("l,limit", "Number of iterations to check divergence", cxxopts::value(clopts.limit)->default_value("1000"))
+        ("j,jobs", "Number of parallel threads to use", cxxopts::value(clopts.jobs)->default_value("0"))
+        ;
 
 
-        auto results = options.parse(argc, argv);
+    auto results = options.parse(argc, argv);
 
-        // Grrr. have to handle help here because we need the options object.
-        if (clopts.help) {
-            std::cout << options.help() << "\n";
-            exit(1);
-        }
+    if (clopts.help) {
+        std::cout << options.help() << "\n";
+        exit(1);
+    }
 
-        clopts.has_center_real = (results.count("cr") > 0);
-        clopts.has_center_img  = (results.count("ci") > 0);
-        clopts.has_jobs        = (results.count("jobs") > 0);
+    clopts.has_center_real = (results.count("cr") > 0);
+    clopts.has_center_img  = (results.count("ci") > 0);
+    clopts.has_jobs        = (results.count("jobs") > 0);
 
-    } catch (const cxxopts::OptionException& e) {
-        std::cerr << "Well, that didn't work: " << e.what() << "\n";
+    // ---------------------------------------------------
+    // Take care of the "easy" general options
+    // ---------------------------------------------------
+    if (clopts.limit < 10) {
+        std::cerr << "iteration limit cannot be less than 10\n";
+        exit(1);
+    }
+
+    if (clopts.has_jobs and clopts.jobs < 0) {
+        std::cerr << "--jobs must be nonnegative\n";
         exit(1);
     }
 
@@ -79,52 +97,140 @@ CLIOptions parse_commandline(int argc, char**argv) {
         clopts.height = clopts.samples;
     }
 
+    if (clopts.aspect != "") {
+    // ---------------------------------------------------
+    // Aspect driven config
+    // ---------------------------------------------------
+        int width,height;
+        std::istringstream iss(clopts.aspect);
+        char delimiter;
+
+        iss >> width >> delimiter >> height;
+
+        if (delimiter != 'x' and delimiter != 'X') {
+            std::cerr << "Invalid separator in --aspect\n";
+        }
+
+        if (width < 10) {
+            std::cerr << "Invalid width specifier (" << width << ") in --aspect\n";
+            exit(1);
+        }
+        if (height < 10) {
+            std::cerr << "Invalid height specifier (" << height << ") in --aspect\n";
+            exit(1);
+        }
+
+        if (clopts.samples > 0) {
+            std::cerr << "Cannot use --samples and --aspect together\n";
+            exit(1);
+        }
+        if (clopts.height > 0) {
+            std::cerr << "Cannot use --height and --aspect together\n";
+            exit(1);
+        }
+        if (clopts.width > 0) {
+            std::cerr << "Cannot use --width and --aspect together\n";
+            exit(1);
+        }
+
+        clopts.height = height;
+        clopts.width  = width;
+
+        if ( not (results.count("box") > 0)) {
+            std::cerr << "--aspect requires --box\n";
+            exit(1);
+        }
+
+        if (clopts.box <= 0.0) {
+            std::cerr << "--box must be positive\n";
+            exit(1);
+        }
+
+        double aspect_ratio  = ((double)height/(double)width);
+        double box_width  = clopts.box;
+        double box_height = clopts.box * aspect_ratio;
+
+        if (clopts.has_center_real and clopts.has_center_img) {
+            clopts.left_top_real = clopts.center_real - (box_width/2.0);
+            clopts.left_top_img  = clopts.center_img  + (box_height/2.0);
+
+            clopts.right_bottom_real = clopts.center_real + (box_width/2.0);
+            clopts.right_bottom_img  = clopts.center_img  - (box_height/2.0);
+        } else if (results.count("ltr") > 0 and results.count("lti") > 0 ) {
+            clopts.right_bottom_real = clopts.left_top_real + box_width;
+            clopts.right_bottom_img  = clopts.left_top_img  - box_height;
+        } else if (results.count("rbr") > 0 and results.count("rbi") > 0) {
+            clopts.left_top_real = clopts.right_bottom_real - box_width;
+            clopts.left_top_img  = clopts.right_bottom_img  + box_height;
+        } else {
+            std::cerr << "One of the following pairs must be specified with --aspect (--cr,--ci), (--ltr,lti), "
+                << "(--rbr,--rbi)\n";
+            exit(1);
+        }
+
+    } else if ( results.count("box") > 0) {
+    // ---------------------------------------------------
+    // Box driven config (without aspect)
+    // ---------------------------------------------------
+        if (clopts.has_center_real and clopts.has_center_img) {
+            clopts.left_top_real = clopts.center_real - clopts.box/2.0;
+            clopts.left_top_img  = clopts.center_img  + clopts.box/2.0;
+
+            clopts.right_bottom_real = clopts.center_real + (clopts.box/2.0);
+            clopts.right_bottom_img  = clopts.center_img  - (clopts.box/2.0);
+        } else if (results.count("ltr") > 0 and results.count("lti") > 0 ) {
+            clopts.right_bottom_real = clopts.left_top_real + clopts.box;
+            clopts.right_bottom_img  = clopts.left_top_img  - clopts.box;
+        } else if (results.count("rbr") > 0 and results.count("rbi") > 0) {
+            clopts.left_top_real = clopts.right_bottom_real - clopts.box;
+            clopts.left_top_img  = clopts.right_bottom_img  + clopts.box;
+        } else {
+            std::cerr << "One of the following pairs must be specified with --box (--cr,--ci), (--ltr,lti), "
+                << "(--rbr,--rbi)\n";
+            exit(1);
+        }
+
+    } else {
+    // ---------------------------------------------------
+    // Direct bounding box config
+    // ---------------------------------------------------
+
+
+        if (clopts.has_center_real or clopts.has_center_img) {
+            std::cerr << "--cr and --ci may only be used with --box\n";
+            exit(1);
+        }
+
+
+        if (clopts.left_top_real < -2.0 or clopts.right_bottom_real > 2.0
+                or clopts.left_top_img > 2.0 or clopts.right_bottom_img < -2.0) {
+
+            std::cerr << "Mandelbrot set is bounded by the box (-2.0 + 2.0i), (2.0-2.0i)."
+                " Given coordinates are outside this box\n";
+        }
+
+        if (clopts.left_top_real >= clopts.right_bottom_real or
+                clopts.left_top_img <= clopts.right_bottom_img) {
+            std::cerr << "Left top point must be to the left and above the right bottom point\n";
+        }
+    }
+
+    if (results.count("samples") > 0) {
+        if (clopts.samples < 10) {
+            std::cerr << "--samples cannot be less than 10\n";
+            exit(0);
+        }
+        clopts.width = clopts.height = clopts.samples;
+    }
+
     if (clopts.width < 10) {
-        throw std::runtime_error("Image width cannot be less than 10\n");
+        std::cerr << "--width cannot be less than 10\n";
+        exit(0);
     }
 
     if (clopts.height < 10) {
-        throw std::runtime_error("Image height cannot be less than 10\n");
-    }
-
-    if (clopts.limit < 10) {
-        throw std::runtime_error("iteration limit cannot be less than 10\n");
-    }
-
-    if (clopts.has_center_real or clopts.has_center_img) {
-        if ( !clopts.has_center_real or !clopts.has_center_img) {
-            throw std::runtime_error("--cr and --ci must be used together\n");
-        }
-
-        if (clopts.box == 0.0) {
-            throw std::runtime_error( 
-                    "--box must be specified if --cr and --ci are specified\n");
-        } else if (clopts.box < 0.0) {
-            throw std::runtime_error( "Box size cannot be negative");
-        }
-
-        clopts.left_top_real = clopts.center_real - (clopts.box/2.0);
-        clopts.right_bottom_real = clopts.center_real + (clopts.box/2.0);
-        clopts.left_top_img = clopts.center_img + (clopts.box/2.0);
-        clopts.right_bottom_img = clopts.center_img - (clopts.box/2.0);
-
-    } else if (clopts.box < 0.0) {
-        std::cerr << "Box size cannot be negative";
-    } else if (clopts.box != 0.0) {
-        clopts.right_bottom_real = clopts.left_top_real + clopts.box;
-        clopts.right_bottom_img = clopts.left_top_img - clopts.box;
-    }
-
-    if (clopts.left_top_real < -2.0 or clopts.right_bottom_real > 2.0
-            or clopts.left_top_img > 2.0 or clopts.right_bottom_img < -2.0) {
-
-        std::cerr << "Mandelbrot set is bounded by the box (-2.0 + 2.0i), (2.0-2.0i)."
-            " Given coordinates are outside this box\n";
-    }
-
-    if (clopts.left_top_real >= clopts.right_bottom_real or
-            clopts.left_top_img <= clopts.right_bottom_img) {
-        std::cerr << "Left top point must be to the left and above the right bottom point\n";
+        std::cerr << "--height cannot be less than 10\n";
+        exit(0);
     }
 
     return clopts;
@@ -138,7 +244,9 @@ int main (int argc, char*argv[]) {
 
     auto clopts = parse_commandline(argc, argv);
 
-    std::cout << "bounding box = (" << clopts.left_top_real << ", " << clopts.left_top_img << "), "
+    std::cout << "bounding box = " 
+        << std::fixed << std::setprecision( 16 ) 
+        << "(" << clopts.left_top_real << ", " << clopts.left_top_img << "), "
         << "(" << clopts.right_bottom_real << ", " << clopts.right_bottom_img << ")\n";
 
     compute_fractal(clopts);

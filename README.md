@@ -17,16 +17,17 @@ can then be used with the `colorator` utiltiy (see below).
 #### general arguments
 
 <dl>
-<dt>-o, --output-file <b>filename</b></dt>
+<dt>-o, --output-file &gt;filename&lt;</dt>
 <dd>path to file into which the output will be written. If the file exists, it
 will be truncated.</dd>
-<dt>-j, --jobs <b>jobcount</b></dt>
-<dd>Number of parallel threads use for computing. If `0` is given or if the the
-options is not on the command line, the engine will use a strict sequential
-code path. If **jobcount** is `1`, the parallel path will be used, but only one
-calculating thread will be used. This can actually be slower than `0`. If
-**jobcount** > `1`, then that many threads will be used.</dd>
-<dt>-l --limit <b>limit</b></dt>
+<dt>-j, --jobs &gt;jobcount&lt;</dt>
+<dd>Number of parallel threads use for computing. If <pre>0</pre> is given or
+if the the options is not on the command line, the engine will use a strict
+sequential code path. If <b>&gt;jobcount&lt;</b> is <pre>1</pre>, the parallel
+path will be used, but only one calculating thread will be used. This can
+actually be slower than <pre>0</pre>. If <b>&gt;jobcount&lt;</b> is greater
+than <pre>1</pre>, then that many threads will be used.</dd> 
+<dt>-l --limit &gt;limit&lt;</dt>
 <dd>Integer number of iterations of the fractal formula to use to decide if the
 results will diverge or not.</dd>
 </dl>
@@ -51,19 +52,19 @@ used.
     1.0 --lti 1.0 --rbr 1.5 --rbi 0.71875 --width 1920 --height 1080`
 
 <dl>
-<dt>--ltr <b>number</b></dt><dd>real coordinate for the left top point of the
+<dt>--ltr &gt;number&lt;</dt><dd>real coordinate for the left top point of the
 bounding box</dd>
-<dt>--lti <b>number</b></dt><dd>imaginary coordinate for the left top point of
+<dt>--lti &gt;number&lt;</dt><dd>imaginary coordinate for the left top point of
 the bounding box</dd>
-<dt>--rbr <b>number</b></dt><dd>real coordinate for the right bottom point of
+<dt>--rbr &gt;number&lt;</dt><dd>real coordinate for the right bottom point of
 the bounding box</dd>
-<dt>--lti <b>number</b></dt><dd>imaginary coordinate for the right bottom point
+<dt>--lti &gt;number&lt;</dt><dd>imaginary coordinate for the right bottom point
 of the bounding box</dd>
-<dt>--cr <b>number</b></dt><dd>real coordinate for the center of the bounding box</dd>
-<dt>--ci <b>number</b></dt><dd>imaginary coordinate for the center of the
+<dt>--cr &gt;number&lt;</dt><dd>real coordinate for the center of the bounding box</dd>
+<dt>--ci &gt;number&lt;</dt><dd>imaginary coordinate for the center of the
 bounding box</dd>
-<dt>--box <b>number</b></dt><dd>When used with --cr,--ci, this is the length of
-the side for bounding box. When used with --aspect, this is the length of the
+<dt>--box &gt;number&lt;</dt><dd>When used with <pre>--cr,--ci</pre>, this is the length of
+the side for bounding box. When used with <pre>--aspect</pre>, this is the length of the
 real axis for the bounding box. </dd>
 </dl>
 
@@ -73,16 +74,15 @@ These arguments control the number of points along each axis that will be
 sampled by the algorithm.
 
 <dl>
-<dd>-s, --samples <b>n</b></dd>
-<dt>Number of samples to use on both axis, equivalent to `--width n --height n`</dt>
-<dd>-w, --width <b>n</b></dd>
-<dt>Number of samples to use on the real axis</dt>
-<dd>-h, --height <b>n</b></dd>
-<dt>Number of samples to use on the imaginary axis</dt>
-<dd>--aspect <b>WxH</b></dd>
-<dt>Number of samples to use. Equivalent to `--width W --height H` but also
-</dl>
-controls the actual height of the bounding box (See above).</dt>
+<dt>-s, --samples &gt;n&lt;</dt>
+<dd>Number of samples to use on both axis, equivalent to <pre>--width n --height n</pre></dd>
+<dt>-w, --width &gt;n&lt;</dt>
+<dd>Number of samples to use on the real axis</dd>
+<dt>-h, --height &gt;n&lt;</dt>
+<dd>Number of samples to use on the imaginary axis</dd>
+<dt>--aspect &gt;WxH&lt;</dt>
+<dd>Number of samples to use. Equivalent to <pre>--width W --height H</pre> but also
+controls the actual height of the bounding box (See above).</dd>
 </dl>
 
 
