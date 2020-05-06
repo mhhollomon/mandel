@@ -39,8 +39,8 @@ CLIOptions parse_commandline(int argc, char**argv) {
             ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
 			("d,debug", "Print debug information", cxxopts::value(clopts.debug))
             ("s,samples", "Number of samples in each dimension", cxxopts::value(clopts.samples)->default_value("0"))
-            ("width", "Width of image in pixels", cxxopts::value(clopts.width)->default_value("100"))
-            ("height", "Height of image in pixels", cxxopts::value(clopts.height)->default_value("100"))
+            ("w,width", "Number of samples along the real axis", cxxopts::value(clopts.width)->default_value("100"))
+            ("h,height", "Number of samples along the imaginary axis", cxxopts::value(clopts.height)->default_value("100"))
             ("ltr", "Left top real", cxxopts::value(clopts.left_top_real)->default_value("-2.0"))
             ("lti", "Left top imaginary", cxxopts::value(clopts.left_top_img)->default_value("2.0"))
             ("rbr", "Right bottom real", cxxopts::value(clopts.right_bottom_real)->default_value("2.0"))
@@ -48,7 +48,7 @@ CLIOptions parse_commandline(int argc, char**argv) {
             ("box", "Length of box - if given, replaces rbr and rbi", cxxopts::value(clopts.box)->default_value("0.0"))
             ("cr", "Center Real", cxxopts::value(clopts.center_real))
             ("ci", "Center Imaginary", cxxopts::value(clopts.center_img))
-            ("limit", "Number of iterations to check divergence", cxxopts::value(clopts.limit)->default_value("1000"))
+            ("l,limit", "Number of iterations to check divergence", cxxopts::value(clopts.limit)->default_value("1000"))
             ("j,jobs", "Number of parallel threads to use", cxxopts::value(clopts.jobs)->default_value("0"))
             ;
 
