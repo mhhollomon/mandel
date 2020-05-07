@@ -8,6 +8,7 @@
 struct fractal_meta_data {
     std::complex<double> bb_top_left;
     std::complex<double> bb_bottom_right;
+    double escape_radius;
     int limit;
     int samples_real;
     int samples_img;

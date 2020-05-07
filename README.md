@@ -17,6 +17,8 @@ can then be used with the `colorator` utiltiy (see below).
 #### general arguments
 
 <dl>
+<dt>-h, --help</dt>
+<dd>Print out short command line help text<dd>
 <dt>-o, --output-file &lt;filename&gt;</dt>
 <dd>path to file into which the output will be written. If the file exists, it
 will be truncated.</dd>
@@ -30,6 +32,8 @@ than <code>1</code>, then that many threads will be used.</dd>
 <dt>-l --limit &lt;limit&gt;</dt>
 <dd>Integer number of iterations of the fractal formula to use to decide if the
 results will diverge or not.</dd>
+<dt>-e, --escape &lt;radius&gt;</dt>
+<dd>Value to use to test if the point has diverged. Default is 256.0</dd>
 </dl>
 
 #### bounding box arguments
@@ -76,9 +80,9 @@ sampled by the algorithm.
 <dl>
 <dt>-s, --samples &lt;n&gt;</dt>
 <dd>Number of samples to use on both axis, equivalent to <code>--width n --height n</code></dd>
-<dt>-w, --width &lt;n&gt;</dt>
+<dt>--width &lt;n&gt;</dt>
 <dd>Number of samples to use on the real axis</dd>
-<dt>-h, --height &lt;n&gt;</dt>
+<dt>--height &lt;n&gt;</dt>
 <dd>Number of samples to use on the imaginary axis</dd>
 <dt>--aspect &lt;WxH&gt;</dt>
 <dd>Number of samples to use. Equivalent to <code>--width W --height H</code> but also

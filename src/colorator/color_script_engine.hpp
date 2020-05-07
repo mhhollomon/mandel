@@ -21,6 +21,8 @@ class ColorScriptEngine: public ScriptEngine {
     bool has_prepass();
 
     void call_prepass(fractal_point_data &results);
+
+    void call_precolor();
 };
 
 #endif

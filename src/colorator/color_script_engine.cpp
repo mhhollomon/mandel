@@ -25,6 +25,19 @@ bool ColorScriptEngine::has_prepass() {
     return prepass_func_ != nullptr;
 }
 
+void ColorScriptEngine::call_precolor() {
+
+
+    auto *precolor_func = find_function("void precolor()");
+
+    if (precolor_func) {
+        prepare_context(precolor_func);
+        if ( not execute_context() ) {
+            throw std::runtime_error("Call to precolor() failed");
+        }
+    }
+}
+
 
 
 void fractal_params_new(void *memory) {
@@ -81,6 +94,10 @@ double script_erf(double a) {
     // shim to make sure the compiler
     // gets the correct version
     return std::erf(a);
+}
+
+double script_log2(double a) {
+    return std::log2(a);
 }
 
 
@@ -160,6 +177,9 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     r = engine->RegisterObjectProperty("meta_data", "complex bb_br",
             asOFFSET(fractal_meta_data,bb_bottom_right));
     assert( r >= 0 );
+    r = engine->RegisterObjectProperty("meta_data", "double escape_radius",
+            asOFFSET(fractal_meta_data,escape_radius));
+    assert( r >= 0 );
     r = engine->RegisterObjectProperty("meta_data", "int limit",
             asOFFSET(fractal_meta_data,limit));
     assert( r >= 0 );
@@ -227,6 +247,9 @@ void ColorScriptEngine::_register_interface(asIScriptEngine * engine) {
     assert( r >= 0 );
     r = engine->RegisterGlobalFunction("double erf(double)",
             asFUNCTION(script_erf), asCALL_CDECL);
+    assert( r >= 0 );
+    r = engine->RegisterGlobalFunction("double log2(double)",
+            asFUNCTION(script_log2), asCALL_CDECL);
     assert( r >= 0 );
 
 }

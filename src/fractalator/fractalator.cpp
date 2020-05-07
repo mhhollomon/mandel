@@ -16,6 +16,7 @@ struct CLIOptions {
     double center_real;
     double center_img;
     int   samples;
+    double escape;
     double left_top_real;
     double left_top_img;
     double right_bottom_real;
@@ -32,17 +33,11 @@ struct CLIOptions {
 
 };
 
-enum anchor_mode {
-    TOP_LEFT,
-    BOTTOM_RIGHT,
-    CENTER
-};
-
 CLIOptions parse_commandline(int argc, char**argv) {
 
     CLIOptions clopts;
 
-    cxxopts::Options options("mandel", "Mandelbrot Generator");
+    cxxopts::Options options("fractalator", "Mandelbrot Generator");
 
     options.add_options()
         ("h,help", "Print help message", cxxopts::value(clopts.help))
@@ -52,6 +47,7 @@ CLIOptions parse_commandline(int argc, char**argv) {
         ("width", "Number of samples along the real axis", cxxopts::value(clopts.width)->default_value("0"))
         ("height", "Number of samples along the imaginary axis", cxxopts::value(clopts.height)->default_value("0"))
         ("aspect", "WxH samples along the axis - also computes new height", cxxopts::value(clopts.aspect))
+        ("e,escape", "Escape radius", cxxopts::value(clopts.escape)->default_value("256.0"))
         ("ltr", "Left top real", cxxopts::value(clopts.left_top_real)->default_value("-2.0"))
         ("lti", "Left top imaginary", cxxopts::value(clopts.left_top_img)->default_value("2.0"))
         ("rbr", "Right bottom real", cxxopts::value(clopts.right_bottom_real)->default_value("2.0"))
@@ -75,9 +71,9 @@ CLIOptions parse_commandline(int argc, char**argv) {
     clopts.has_center_img  = (results.count("ci") > 0);
     clopts.has_jobs        = (results.count("jobs") > 0);
 
-    // ---------------------------------------------------
+    // -----------------------------------------------------------------------
     // Take care of the "easy" general options
-    // ---------------------------------------------------
+    // -----------------------------------------------------------------------
     if (clopts.limit < 10) {
         std::cerr << "iteration limit cannot be less than 10\n";
         exit(1);
@@ -90,12 +86,22 @@ CLIOptions parse_commandline(int argc, char**argv) {
 
     if (clopts.samples > 0) {
         if (clopts.samples < 10) {
-            throw std::runtime_error("Samples must be 0 or greater\n");
+            std::cerr << "Samples must be 10 or greater\n";
+            exit(1);
         }
 
         clopts.width = clopts.samples;
         clopts.height = clopts.samples;
     }
+
+    if (clopts.escape < 2.0) {
+        std::cerr << "--escape must be larger that 2.0\n";
+        exit(1);
+    }
+
+    // -----------------------------------------------------------------------
+    // Compute bounding box
+    // -----------------------------------------------------------------------
 
     if (clopts.aspect != "") {
     // ---------------------------------------------------
@@ -215,14 +221,10 @@ CLIOptions parse_commandline(int argc, char**argv) {
         }
     }
 
-    if (results.count("samples") > 0) {
-        if (clopts.samples < 10) {
-            std::cerr << "--samples cannot be less than 10\n";
-            exit(0);
-        }
-        clopts.width = clopts.height = clopts.samples;
-    }
 
+    // -----------------------------------------------------------------------
+    // Final checks on (possibly) derived values
+    // -----------------------------------------------------------------------
     if (clopts.width < 10) {
         std::cerr << "--width cannot be less than 10\n";
         exit(0);
@@ -255,7 +257,7 @@ int main (int argc, char*argv[]) {
 }
 
 
-void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<fixed_array<result_slice>> data) {
+void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<point_grid> data) {
     std::cout << "Writing File\n";
 
     int max_iter = 0;
@@ -274,6 +276,7 @@ void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<fixed_array<re
     output_file.add_metadata(
             { { clopts.left_top_real, clopts.left_top_img },
                 { clopts.right_bottom_real, clopts.right_bottom_img },
+                clopts.escape,
                 clopts.limit,
                 clopts.width,
                 clopts.height,
@@ -291,11 +294,12 @@ void write_fractal_file(CLIOptions const &clopts, std::shared_ptr<fixed_array<re
 void compute_fractal(CLIOptions const &clopts) {
     std::cout << "Computing fractal\n";
 
-    std::shared_ptr<fixed_array<result_slice>> fractal_data;
+    std::shared_ptr<point_grid> fractal_data;
 
     auto fp = fractal_params{
                 std::complex<double>{ clopts.left_top_real, clopts.left_top_img },
                 std::complex<double>{ clopts.right_bottom_real, clopts.right_bottom_img },
+                clopts.escape,
                 clopts.limit,
                 clopts.width,
                 clopts.height

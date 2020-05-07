@@ -5,6 +5,7 @@
 
 #include <scriptmath/scriptmath.h>
 #include <scriptmath/scriptmathcomplex.h>
+#include <scriptarray/scriptarray.h>
 
 #include <iostream>
 #include <cassert>
@@ -140,6 +141,9 @@ void ScriptEngine::initialize(std::string const &script) {
     r= engine_->SetMessageCallback(asFUNCTION(MessageCallback), 0, 
             asCALL_CDECL);
     assert(r >= 0);
+
+    // array types
+    RegisterScriptArray(engine_, true);
 
     // std::string
     RegisterStdString(engine_);

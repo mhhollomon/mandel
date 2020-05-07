@@ -127,6 +127,11 @@ void color_image(CLIOptions const &clopts, FractalFile const &data) {
         }
     }
 
+    if (using_script) {
+        std::cout << "calling precolor\n";
+        se.call_precolor();
+    }
+
     auto pixels = std::vector<pixel>{};
     std::cout << "colorizing\n";
 	for (int i = 0; i < rows->size(); ++i) {

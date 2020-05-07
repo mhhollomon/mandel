@@ -10,7 +10,7 @@ const unsigned VERSION   = 0x00010001;
 template<class Archive> void serialize(Archive & archive,
                fractal_meta_data & fmd)
 {
-    archive( fmd.bb_top_left, fmd.bb_bottom_right, fmd.limit,
+    archive( fmd.bb_top_left, fmd.bb_bottom_right, fmd.escape_radius, fmd.limit,
             fmd.samples_real, fmd.samples_img,
             fmd.max_iterations, fmd.min_iterations);
 }

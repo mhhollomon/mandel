@@ -27,7 +27,7 @@ class work_queue {
     std::tuple<bool, WorkItem> get_work() {
         std::unique_lock<std::mutex> l(mtx_);
 
-        work_available_.wait(l, [this](){return all_done_ or queue_.size() > 0; });
+        work_available_.wait(l, [this](){return (all_done_ or (queue_.size() > 0)); });
 
         if (all_done_) {
             return {false, WorkItem()};
@@ -70,7 +70,7 @@ class work_queue {
         std::unique_lock<std::mutex> l(mtx_);
 
         all_done_ = true;
-        work_available_.notify_one();
+        work_available_.notify_all();
     }
 
 };
