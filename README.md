@@ -92,18 +92,47 @@ controls the actual height of the bounding box (See above).</dd>
 
 ## colorator
 
-TBD
+Applies a user supplied coloring algorithm to the input fractal data to create a
+.bmp mage file.
+
+The coloring algorithm is written in
+[angelscript](http://www.angelcode.com/angelscript/sdk/docs/manual/doc_script.html).
+
+See the docs directory for further details on the interface. See the samples
+directory for examples.
+
+### command line
+
+`colorator [-h] -o <output> -i <input> -s <script>`
+
+<dl>
+<dt>-h, --help </dt>
+<dd>Print out short command line help text<dd>
+<dt>-o, --output-file &lt;filename&gt;</dt>
+<dd>path to file into which the output will be written. If the file exists, it
+will be truncated.</dd>
+<dt>-i, --input-file &lt;filename&gt;</dt>
+<dd>Path to .fract file on to which to apply coloring. It assumes the file
+format is that put out by fractalator.</dd>
+<dt>-s, --script-file &lt;filename&gt;</dt>
+<dd>Path to the angelscript file containing coloring algorithm.</dd>
+</dl>
 
 ## mandel
 
-TBD
+Future intelligent combination of fractalator and colorator.
+
+## gmandel
+
+Hypothetical future version of mandel but with a gui interface.
 
 ## Technologies
 
 - [Cmake](https://cmake.org/) for build configuration.
 - [cxxopts](https://github.com/jarro2783/cxxopts) for command line handling.
 - [cereal](https://uscilab.github.io/cereal/index.html) for serialization.
+- [angelscript](http://www.angelcode.com/angelscript/sdk/docs/manual/doc_script.html) for the user scripting support.
 
 ## License
 
-MIT &copy; 2018-2019 Mark Hollomon
+MIT &copy; 2020 Mark Hollomon
