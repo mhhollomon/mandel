@@ -66,6 +66,10 @@ asIScriptContext* ScriptEngine::prepare_context(asIScriptFunction *func) {
     return context_;
 }
 
+asIScriptModule *ScriptEngine::get_module() {
+    return engine_->GetModule("Colorizer");
+}
+
 void ScriptEngine::print_exception_info() {
     // Determine the exception that occurred
     std::cerr << "Script Exception:\n";

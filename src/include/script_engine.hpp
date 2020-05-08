@@ -9,8 +9,6 @@
 
 
 class ScriptEngine {
-    asIScriptEngine *engine_ = nullptr;
-    asIScriptContext *context_ = nullptr;
 
   public:
     ScriptEngine() noexcept = default;
@@ -25,7 +23,12 @@ class ScriptEngine {
     void print_exception_info();
 
   protected:
+    asIScriptEngine *engine_ = nullptr;
+    asIScriptContext *context_ = nullptr;
+
     bool execute_context();
+
+    asIScriptModule *get_module();
 
   private:
     virtual void _register_interface(asIScriptEngine* engine) {} 

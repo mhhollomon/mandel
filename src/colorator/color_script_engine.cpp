@@ -4,7 +4,10 @@
 
 #include <iostream>
 #include <cassert>
-
+#include <cstring>
+#include <string_view>
+#include <map>
+#include <charconv>
 
 
 ColorScriptEngine::~ColorScriptEngine() {
@@ -100,15 +103,189 @@ double script_log2(double a) {
     return std::log2(a);
 }
 
+struct parse {
+    std::string_view key;
+    std::string_view value;
+    parse(std::string_view k, std::string_view v) :
+        key(k), value(v) {}
+};
 
-bool ColorScriptEngine::call_setup(fractal_meta_data *fp) {
+void* ColorScriptEngine::parse_args(std::string arg_string) {
+
+    std::map<std::string_view, std::string_view> kvp;
+
+    std::string_view sv(arg_string);
+
+    char current_delim = '=';
+    std::string_view current_key;
+    while(true) {
+        std::cerr << "current delim = '" << current_delim << "'\n";
+        auto pos = sv.find_first_of(";=");
+
+        if (pos == std::string_view::npos) {
+            if (sv.size() > 0) {
+                if (current_delim == ';') {
+                    // we saw a key, so use what is left as the value.
+                    kvp.emplace(current_key, sv);
+                } else {
+                    throw std::runtime_error("Invalid args specified - key with no value");
+                }
+            }
+            break;
+
+        } else if (sv[pos] != current_delim) {
+            throw std::runtime_error("Invalid args specified - looking for " + current_delim);
+        }
+
+        if (current_delim == '=') {
+            current_key = sv.substr(0, pos);
+            sv.remove_prefix(pos+1);
+            current_delim = ';';
+        } else {
+            auto value = sv.substr(0, pos);
+            sv.remove_prefix(pos+1);
+            kvp.emplace(current_key, value);
+            current_delim = '=';
+        }
+    }
+
+    for (auto const& [key, value] : kvp) {
+        std::cerr << key << " => " << value << "\n";
+    }
+
+    asIScriptModule *module = get_module();
+    asITypeInfo *args_class_type = module->GetTypeInfoByDecl("args");
+
+    if (not args_class_type) {
+        throw std::runtime_error("Could not find class args for setup\n");
+    }
+
+    asIScriptFunction *factory = args_class_type->GetFactoryByDecl("args @args()");
+ 
+    // Prepare the context to call the factory function
+    auto *ctx = prepare_context(factory);
+    
+
+    // Execute the call
+    ctx->Execute();
+    
+    // Get the object that was created
+    asIScriptObject *args_obj = (asIScriptObject*)ctx->GetReturnObject();
+    args_obj->AddRef();
+
+    unsigned prop_count = args_class_type->GetPropertyCount();
+
+    for (unsigned i = 0; i < prop_count; ++i) {
+        char const * prop_name = args_obj->GetPropertyName(i);
+        unsigned prop_type_id = args_obj->GetPropertyTypeId(i);
+
+        std::cerr << "checking property = " << prop_name << "\n";
+        auto const iter = kvp.find(prop_name);
+        if (iter != kvp.end()) {
+            std::cerr << "Found property = " << prop_name << " => " << iter->second << "\n";
+
+            if (prop_type_id == asTYPEID_INT32 ) {
+                std::cerr << "its an int\n";
+                int *prop_addr = (int*)args_obj->GetAddressOfProperty(i);
+                int new_value;
+                
+                auto end_ptr = iter->second.data() + iter->second.size();
+                auto result = std::from_chars(iter->second.data(), 
+                        end_ptr, new_value);
+                if (result.ec == std::errc::invalid_argument or result.ptr != end_ptr) {
+                    std::cerr << "Could not convert string '" << iter->second 
+                            << "' to an integer for property " << prop_name << "\n";
+                    throw std::runtime_error(
+                            "Integer conversion error for property argument");
+                }
+
+                std::cerr << "Old Value = " << *prop_addr << "\n";
+                std::cerr << "New value = " << new_value << "\n";
+                *prop_addr = new_value;
+                
+            } else if (prop_type_id == asTYPEID_BOOL) {
+                std::cerr << "its an bool\n";
+                bool *prop_addr = (bool*)args_obj->GetAddressOfProperty(i);
+                if (iter->second ==  "true" or iter->second == "1") {
+                    *prop_addr = true;
+                } else {
+                    *prop_addr = false;
+                }
+            } else if (prop_type_id == asTYPEID_DOUBLE ) {
+                std::cerr << "its a double\n";
+                double *prop_addr = (double*)args_obj->GetAddressOfProperty(i);
+                double new_value;
+                
+                /* apparently libstdc++ doesn't have the floating point from_char
+                 * so we need to fall back on stod, sigh
+                 *
+                auto result = std::from_chars(iter->second.data(), 
+                        iter->second.data() + iter->second.size(), new_value,
+                        std::chars_format::general);
+                if (result.ec == std::errc::invalid_argument) {
+                    std::cerr << "Could not convert value" << iter->second 
+                            << " to a double for property " << prop_name << "\n";
+                    throw std::runtime_error(
+                            "Double conversion error for property argument");
+                }
+                */
+
+                size_t end;
+                std::string foo = std::string(iter->second);
+                new_value = stod(foo, &end);
+
+                if (end != foo.size()) {
+                    std::cerr << "Could not convert string '" << iter->second 
+                            << "' to a double for property " << prop_name << "\n";
+                    throw std::runtime_error(
+                            "Double conversion error for property argument");
+                }
+
+                std::cerr << "Old Value = " << *prop_addr << "\n";
+                std::cerr << "New value = " << new_value << "\n";
+
+                *prop_addr = new_value;
+                
+            } else {
+                std::cerr << "Some other type = " << prop_type_id << "\n";
+            }
+        }
+    }
+
+    return args_obj;
+}
 
 
-    auto *setup_func = find_function("void setup(meta_data)");
+bool ColorScriptEngine::call_setup(fractal_meta_data *fp, std::string arg_string) {
+
+
+    bool has_args = true;
+    auto *setup_func = find_function("void setup(meta_data,args@)");
+
+    if (not setup_func) {
+        setup_func = find_function("void setup(meta_data)");
+        has_args = false;
+    }
 
     if (setup_func) {
-        auto ctx = prepare_context("void setup(meta_data)");
+        void *args_obj = nullptr;
+        if (has_args) {
+            args_obj = parse_args(arg_string);
+        }
+
+        // need to do this after the call to parse_args
+        // since it needs to make a function call
+        auto ctx = prepare_context(setup_func);
         ctx->SetArgObject(0, fp);
+        if (has_args) {
+            std::cerr << "Got here ---\n";
+            if (args_obj == nullptr) {
+                std::cerr << "Yipes its null!\n";
+            } else {
+                std::cerr << "Seems kosher\n";
+            }
+            ctx->SetArgAddress(1, args_obj);
+        }
 
         return execute_context();
     } else {

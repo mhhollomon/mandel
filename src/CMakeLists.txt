@@ -21,17 +21,21 @@ target_sources(lib_objlib
         lib/bmp_file.cpp
         lib/compute.cpp
         lib/pixel.cpp
+        lib/fractal_file.cpp
     PUBLIC
         include/bmp_file.hpp
         include/compute.hpp
         include/pixel.hpp
         include/fixed_array.hpp
         include/work_queue.hpp
+        include/colorator.hpp
+        include/fractal_file.hpp
     )
 
 target_link_libraries(lib_objlib 
     PUBLIC
         lib-include
+        cereal
     )
 target_include_directories(lib_objlib
     PUBLIC
@@ -62,7 +66,4 @@ target_include_directories(script_engine
     PUBLIC
         ../extern/angelscript/angelscript/include
     )
-
-        
-add_subdirectory(proto)
 

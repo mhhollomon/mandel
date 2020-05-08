@@ -1,7 +1,6 @@
 #if !defined(FRACTAL_FILE_HPP_)
 #define FRACTAL_FILE_HPP_
 
-#include "fractal.pb.h"
 #include "fractal_data.hpp"
 
 #include "fixed_array.hpp"
