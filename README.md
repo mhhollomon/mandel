@@ -93,17 +93,17 @@ controls the actual height of the bounding box (See above).</dd>
 ## colorator
 
 Applies a user supplied coloring algorithm to the input fractal data to create a
-.bmp mage file.
+.bmp image file.
 
 The coloring algorithm is written in
 [angelscript](http://www.angelcode.com/angelscript/sdk/docs/manual/doc_script.html).
 
-See the docs directory for further details on the interface. See the samples
-directory for examples.
+See the [scripting documentation](docs/scripting.md) for further details on the interface. See the 
+[samples directory](samples/) for examples.
 
 ### command line
 
-`colorator [-h] -o <output> -i <input> -s <script>`
+`colorator [-h] -o <output> -i <input> -s <script> -a <argstring>`
 
 <dl>
 <dt>-h, --help </dt>
@@ -116,6 +116,10 @@ will be truncated.</dd>
 format is that put out by fractalator.</dd>
 <dt>-s, --script-file &lt;filename&gt;</dt>
 <dd>Path to the angelscript file containing coloring algorithm.</dd>
+<dt>-a, --args &lt;argstring&gt;</dt>
+<dd>semi-colon separated list of key/value pairs that will be passed to the
+script. see [scripting documentation](docs/scripting.md) of further
+details</dd>
 </dl>
 
 ## mandel

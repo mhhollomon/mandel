@@ -88,9 +88,19 @@ called if given, but will not cause and error if they are not.
 
 See the samples directory for commented examples.
 
-### `void setup(meta_data)` (optional)
+### setup() (optional)
 The first function called and the only chance the script has to get the
 `meta_data`.
+
+There are two possible signatures for the setup function
+
+#### `void setup(meta_data)`
+
+#### `void setup(meta_data, args@)`
+
+The second form is the one preferred by the system. If it is available, it will
+be called. See section ["Argument Passing"](#argument-passing)
+
 
 ### `void prepass(point_data@)` (optional)
 `prepass` will be called with the same data (in the same order) as `colorize`.
@@ -106,3 +116,42 @@ coloring pass.
 The actuall coloring algorithm. This function is expected to return a color
 object for each point passed.
 
+### Argument Passing
+
+It is possible to pass arguments from the colorator command line into the
+script. To do so, you must do the following:
+
+#### define an "args" class
+
+1. Define a `class args` 
+   (the name of the class must be exactly "args") to hold
+   the data. Initializers should be used to set default values. Unlike C++,
+   Angelscript initializes all variables. 
+
+   Currently only `int`, `dobule` and `bool` members are supported.
+
+~~~cpp
+class args {
+    double color_offset;
+    bool   turn_off_blending = false;
+    int    histogram_buckets = 10;
+}
+~~~
+
+2. Use the two parameter form of the `setup()` function.
+   ~~~cpp
+   void setup(meta_data m, args@ a) {
+        // yada
+   }
+   ~~~
+
+3. Pass the arguments in the command line
+   `colorator -i in.fact -o out.bmp -s myscript --args 'color_offset=3.2;histogram_buckets=100;turn_off_blending=true`
+
+
+Class members that are not mentioned on the command line will retain the
+default value - either the system default, or the default initializer.
+
+If a key in the args list is not a member of the class, it will be silently
+ignored. If a member is in the rgs list but the member is not of recognized
+type, awarning will be issued and the key/value pair ignored.
