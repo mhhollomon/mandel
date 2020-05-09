@@ -52,10 +52,7 @@ add_executable(fractalator)
 
 target_sources(fractalator
     PRIVATE
-        src/fractalator/fractalator.cpp
-        src/include/fractal_file.hpp
-        src/include/compute.hpp
-        src/include/work_queue.hpp
+        src/fractalator/fractalator_main.cpp
     )
 
 target_link_libraries(fractalator
@@ -63,6 +60,7 @@ target_link_libraries(fractalator
         cxxopts
         lib_objlib
         lib-include
+        fractalator-lib
     )
 
 ##

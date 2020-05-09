@@ -70,4 +70,5 @@ target_include_directories(script_engine
     )
 
 add_subdirectory(colorator)
+add_subdirectory(fractalator)
 
