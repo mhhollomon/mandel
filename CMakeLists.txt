@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_compile_options("-g;-O1;-Wall;-pedantic")
+add_compile_options("-g;-O2;-Wall;-pedantic")
 
 add_subdirectory(extern)
 
@@ -63,7 +63,6 @@ target_link_libraries(fractalator
         cxxopts
         lib_objlib
         lib-include
-        fractal-file
     )
 
 ##

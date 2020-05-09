@@ -4816,6 +4816,8 @@ void asCContext::DetermineLiveObjects(asCArray<int> &liveObjects, asUINT stackLe
 						}
 					}
 					break;
+                case asOBJ_VARDECL :
+                    break;
 				}
 			}
 

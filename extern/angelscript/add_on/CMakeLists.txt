@@ -10,6 +10,8 @@ target_include_directories(angelscript-addons
         .
     )
 
+target_compile_options(angelscript-addons PRIVATE -fno-strict-aliasing)
+
 target_sources(angelscript-addons
     PRIVATE
         scriptbuilder/scriptbuilder.cpp

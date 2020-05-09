@@ -36,6 +36,7 @@ target_link_libraries(lib_objlib
     PUBLIC
         lib-include
         cereal
+        pthread
     )
 target_include_directories(lib_objlib
     PUBLIC

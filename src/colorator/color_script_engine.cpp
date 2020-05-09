@@ -187,7 +187,7 @@ void* ColorScriptEngine::parse_args(std::string arg_string) {
             if (prop_type_id == asTYPEID_INT32 ) {
                 std::cerr << "its an int\n";
                 int *prop_addr = (int*)args_obj->GetAddressOfProperty(i);
-                int new_value;
+                int new_value = 0;
                 
                 auto end_ptr = iter->second.data() + iter->second.size();
                 auto result = std::from_chars(iter->second.data(), 
