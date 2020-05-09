@@ -3,6 +3,17 @@ My take on the fractal coloring genre
 
 A set of tools to evaluate and color fractal sets.
 
+# Building
+
+~~~
+cmake -S . -B build
+cmake --build build
+~~~
+
+The executables will be in the new build directory.
+
+# Programs
+
 ## fractalator
 A CLI for evaulating point on the complex number plane for fractal set
 inclusion. Currently, the only fractal supported is the Mandelbrot set.

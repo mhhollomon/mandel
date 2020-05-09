@@ -7,9 +7,10 @@ cmake_minimum_required(VERSION 3.13)
 add_library(lib-include INTERFACE)
 
 target_include_directories(lib-include
-    INTERFACE include)
+    INTERFACE 
+        include
+    )
 
-    #    INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 ##
 ## lib_objlib
@@ -67,4 +68,6 @@ target_include_directories(script_engine
     PUBLIC
         ../extern/angelscript/angelscript/include
     )
+
+add_subdirectory(colorator)
 

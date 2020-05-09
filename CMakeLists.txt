@@ -72,14 +72,7 @@ add_executable(colorator)
 
 target_sources(colorator
     PRIVATE
-        src/colorator/colorator.cpp
-        src/colorator/color_script_engine.cpp
-        src/colorator/color_script_engine.hpp
         src/colorator/colorator_main.cpp
-        src/include/compute.hpp
-        src/include/pixel.hpp
-        src/include/bmp_file.hpp
-        src/include/colorator.hpp
     )
 
 target_link_libraries(colorator
@@ -87,7 +80,7 @@ target_link_libraries(colorator
         cxxopts
         lib_objlib
         lib-include
-        script_engine
+        colorator-lib
     )
 
 
