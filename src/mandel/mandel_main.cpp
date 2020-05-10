@@ -307,7 +307,7 @@ int main (int argc, char*argv[]) {
         std::cerr << "Reusing data\n";
     }
 
-    auto data = FractalFile::read_data_from_file(fract_file_name);
+    auto data = FractalFile::read_from_file(fract_file_name);
 
     color_image({
             fract_file_name,

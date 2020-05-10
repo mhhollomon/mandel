@@ -127,6 +127,8 @@ void FractalFile::read_data() {
 
     rows_ = std::make_shared<point_grid>(expected_rows);
 
+    cereal::BinaryInputArchive iarchive(fstrm_);
+
     for (int i = 0; i < expected_rows; ++i) {
         auto new_row = std::make_shared<point_row>(expected_cols);
         for (int j = 0; j < expected_cols; ++j) {
