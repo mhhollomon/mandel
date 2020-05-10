@@ -8,7 +8,6 @@ struct colorator_options {
     std::string output_file;
     std::string script_file = "";
     std::string script_args = "";
-    bool  help = false;
 };
 
 void color_image(colorator_options const &clopts, FractalFile const &data);

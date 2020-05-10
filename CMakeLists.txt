@@ -27,23 +27,6 @@ link_directories(
 include_directories(
     ${GTKMM_INCLUDE_DIRS}  )
 
-##
-## mandel application
-##
-###add_executable(mandel)
-#
-#target_sources(mandel
-#    PRIVATE
-#        "src/main.cpp"
-#        "src/include/compute.hpp"
-#    )
-#
-#target_link_libraries(mandel
-#    PRIVATE
-#        cxxopts
-#        lib_objlib
-#        lib-include
-#    )
 #
 ##
 ## fractalator application
@@ -82,6 +65,24 @@ target_link_libraries(colorator
     )
 
 
+##
+## mandel application
+##
+add_executable(mandel)
+
+target_sources(mandel
+    PRIVATE
+        "src/mandel/mandel_main.cpp"
+    )
+
+target_link_libraries(mandel
+    PRIVATE
+        cxxopts
+        lib_objlib
+        lib-include
+        fractalator-lib
+        colorator-lib
+    )
 ##
 ## gmandel application
 ##

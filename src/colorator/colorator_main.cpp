@@ -6,12 +6,13 @@
 colorator_options parse_commandline(int argc, char**argv) {
 
     colorator_options clopts;
+    bool help_option;
 
     try {
         cxxopts::Options options("colorator", "fractal file colorizer");
 
         options.add_options()
-            ("h,help", "Print help message", cxxopts::value(clopts.help))
+            ("h,help", "Print help message", cxxopts::value(help_option))
             ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
             ("i,input-file", ".fract file to read for fractal data", cxxopts::value(clopts.input_file))
             ("s,script-file", "angelscript file to read for coloring algorithm", cxxopts::value(clopts.script_file))
@@ -22,7 +23,7 @@ colorator_options parse_commandline(int argc, char**argv) {
         auto results = options.parse(argc, argv);
 
         // Grrr. have to handle help here because we need the options object.
-        if (clopts.help) {
+        if (help_option) {
             std::cout << options.help() << "\n";
             exit(1);
         }
@@ -34,7 +35,10 @@ colorator_options parse_commandline(int argc, char**argv) {
     }
 
     if (clopts.input_file == "") throw std::runtime_error("No input file specified");
-    if (clopts.output_file == "") throw std::runtime_error("No output file specified");
+    if (clopts.output_file == "") {
+        std::cerr << "No output file path specified\n";
+        exit(1);
+    }
     if (clopts.script_file == "") throw std::runtime_error("No script file specified");
     
     return clopts;

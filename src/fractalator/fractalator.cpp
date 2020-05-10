@@ -45,6 +45,10 @@ void write_fractal_file(fractalator_options const &clopts,
 
 void compute_fractal(fractalator_options const &clopts) {
     std::cout << "Computing fractal\n";
+    std::cout << "bounding box = " 
+        << std::fixed << std::setprecision( 16 ) 
+        << "(" << clopts.left_top_real << ", " << clopts.left_top_img << "), "
+        << "(" << clopts.right_bottom_real << ", " << clopts.right_bottom_img << ")\n";
 
     std::shared_ptr<point_grid> fractal_data;
 

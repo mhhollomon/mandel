@@ -1,15 +1,37 @@
 #include "fractalator.hpp"
-
+#include "colorator.hpp"
 #include "cxxopts.hpp"
+// -------------------------------------------------------------------
+//
 
-#include <iostream>
-#include <sstream>
-#include <iomanip>
+struct mandel_options {
+    std::string output_file;
+    std::string script_file = "";
+    std::string script_args = "";
+    std::string aspect;
+    double box;
+    double center_real;
+    double center_img;
+    int    samples;
+    double escape;
+    double left_top_real;
+    double left_top_img;
+    double right_bottom_real;
+    double right_bottom_img;
+    int    width;
+    int    height;
+    int    limit;
+    bool   debug = false;
+    int    jobs;
+
+};
+
+// -------------------------------------------------------------------
 
 
-fractalator_options parse_commandline(int argc, char**argv) {
+mandel_options parse_commandline(int argc, char**argv) {
 
-    fractalator_options clopts;
+    mandel_options clopts;
 
     bool help_option;
 
@@ -33,6 +55,8 @@ fractalator_options parse_commandline(int argc, char**argv) {
         ("ci", "Center Imaginary", cxxopts::value(clopts.center_img))
         ("l,limit", "Number of iterations to check divergence", cxxopts::value(clopts.limit)->default_value("1000"))
         ("j,jobs", "Number of parallel threads to use", cxxopts::value(clopts.jobs)->default_value("0"))
+        ("script", "angelscript file to read for coloring algorithm", cxxopts::value(clopts.script_file))
+        ("a,args", "key value pairs separated by semi-colon to pass to script", cxxopts::value(clopts.script_args))
         ;
 
 
@@ -72,6 +96,11 @@ fractalator_options parse_commandline(int argc, char**argv) {
 
     if (clopts.escape < 2.0) {
         std::cerr << "--escape must be larger that 2.0\n";
+        exit(1);
+    }
+
+    if (clopts.script_file == "") {
+        std::cerr << "No script file specified\n";
         exit(1);
     }
 
@@ -222,11 +251,49 @@ fractalator_options parse_commandline(int argc, char**argv) {
 
 
 
+// -------------------------------------------------------------------
+auto read_fractal_data(std::string input_file_name) {
+
+    std::fstream input{input_file_name, std::ios::in | std::ios::binary};
+
+    return FractalFile::read_from_file(input_file_name);
+
+
+}
+// -------------------------------------------------------------------
+//
 int main (int argc, char*argv[]) {
 
     auto clopts = parse_commandline(argc, argv);
 
-    compute_fractal(clopts);
+
+    compute_fractal({
+            clopts.output_file + ".fract",
+            clopts.aspect,
+            clopts.box,
+            clopts.center_real,
+            clopts.center_img,
+            clopts.samples,
+            clopts.escape,
+            clopts.left_top_real,
+            clopts.left_top_img,
+            clopts.right_bottom_real,
+            clopts.right_bottom_img,
+            clopts.width,
+            clopts.height,
+            clopts.limit,
+            clopts.debug,
+            clopts.jobs
+            });
+
+    auto data = read_fractal_data(clopts.output_file + ".fract");
+
+    color_image({
+            clopts.output_file + ".fract",
+            clopts.output_file + ".bmp",
+            clopts.script_file,
+            clopts.script_args,
+            }, *data);
 
     return 0;
 }
