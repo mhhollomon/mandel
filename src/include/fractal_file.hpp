@@ -29,11 +29,13 @@ class FractalFile {
     void finalize();
 
     static std::unique_ptr<FractalFile> read_from_file(std::string file_name);
+    static fractal_meta_data read_meta_data_from_file(std::string file_name);
     
     fractal_meta_data get_meta_data() const;
     std::shared_ptr<point_grid>  const & get_rows() const { return rows_; }
 
   private:
+    void read_meta_data();
     void read_data();
 
 };

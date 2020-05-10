@@ -89,12 +89,20 @@ std::unique_ptr<FractalFile> FractalFile::read_from_file(std::string file_name) 
     return retval;
 }
 
-void FractalFile::read_data() {
+fractal_meta_data 
+FractalFile::read_meta_data_from_file(std::string file_name) {
+    FractalFile ff(file_name);
+
+    ff.read_meta_data();
+
+    return ff.get_meta_data();
+
+}
+
+void FractalFile::read_meta_data() {
     fstrm_.open(file_name_,
             std::ios::in | std::ios::binary);
 
-    // TODO - read the signature and version
-    //
     char buffer[sizeof(SIGNATURE)+sizeof(VERSION)+1];
 
     fstrm_.read(buffer, sizeof(SIGNATURE));
@@ -108,6 +116,11 @@ void FractalFile::read_data() {
     cereal::BinaryInputArchive iarchive(fstrm_);
     iarchive(metadata_);
     has_meta_ = true;
+}
+
+void FractalFile::read_data() {
+
+    read_meta_data();
 
     int expected_rows = metadata_.samples_img;
     int expected_cols = metadata_.samples_real;
@@ -123,6 +136,8 @@ void FractalFile::read_data() {
         (*rows_)[i] = new_row;
 
     }
+
+    fstrm_.close();
 
 }
 

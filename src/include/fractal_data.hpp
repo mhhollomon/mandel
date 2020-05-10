@@ -14,6 +14,17 @@ struct fractal_meta_data {
     int samples_img;
     int max_iterations;
     int min_iterations;
+
+    bool similar(fractal_meta_data const & o) const {
+        return (
+                (bb_top_left == o.bb_top_left) &&
+                (bb_bottom_right == o.bb_bottom_right) &&
+                (escape_radius == o.escape_radius) &&
+                (limit == o.limit) &&
+                (samples_real == o.samples_real) &&
+                (samples_img == o.samples_img)
+               );
+    }
 };
 
 

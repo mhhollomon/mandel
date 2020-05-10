@@ -1,6 +1,14 @@
 #include "fractalator.hpp"
 #include "colorator.hpp"
 #include "cxxopts.hpp"
+
+#include "fractal_data.hpp"
+#include "fractal_file.hpp"
+
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 // -------------------------------------------------------------------
 //
 
@@ -35,7 +43,7 @@ mandel_options parse_commandline(int argc, char**argv) {
 
     bool help_option;
 
-    cxxopts::Options options("fractalator", "Mandelbrot Generator");
+    cxxopts::Options options("mandel", "Mandelbrot Generator");
 
     options.add_options()
         ("h,help", "Print help message", cxxopts::value(help_option))
@@ -252,22 +260,31 @@ mandel_options parse_commandline(int argc, char**argv) {
 
 
 // -------------------------------------------------------------------
-auto read_fractal_data(std::string input_file_name) {
-
-    std::fstream input{input_file_name, std::ios::in | std::ios::binary};
-
-    return FractalFile::read_from_file(input_file_name);
-
-
-}
-// -------------------------------------------------------------------
 //
 int main (int argc, char*argv[]) {
 
     auto clopts = parse_commandline(argc, argv);
 
+    std::string fract_file_name = clopts.output_file + ".fract";
 
-    compute_fractal({
+    bool need_to_compute = true;
+    if ( fs::exists(fract_file_name)) {
+        auto meta_data = FractalFile::read_meta_data_from_file(fract_file_name);
+
+        need_to_compute = not meta_data.similar( {
+                { clopts.left_top_real, clopts.left_top_img },
+                { clopts.right_bottom_real, clopts.right_bottom_img },
+                clopts.escape,
+                clopts.limit,
+                clopts.width,
+                clopts.height,
+                0,0
+                }) ;
+    }
+
+
+    if (need_to_compute) {
+        compute_fractal({
             clopts.output_file + ".fract",
             clopts.aspect,
             clopts.box,
@@ -286,10 +303,14 @@ int main (int argc, char*argv[]) {
             clopts.jobs
             });
 
-    auto data = read_fractal_data(clopts.output_file + ".fract");
+    } else {
+        std::cerr << "Reusing data\n";
+    }
+
+    auto data = FractalFile::read_data_from_file(fract_file_name);
 
     color_image({
-            clopts.output_file + ".fract",
+            fract_file_name,
             clopts.output_file + ".bmp",
             clopts.script_file,
             clopts.script_args,
