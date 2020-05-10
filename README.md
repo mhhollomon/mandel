@@ -135,7 +135,29 @@ details</dd>
 
 ## mandel
 
-Future intelligent combination of fractalator and colorator.
+`mandel` combines `fractalator` and `colorator`, but with a small bit of
+smarts. `mandel` checks the parameters encoded in the `fractalator` output. If
+they are the same, then only the coloring pass is run. If they are different,
+then both will be run. This allows you to fine tune the coloring while still
+having the felixbility to slightly tweak the fractal while only doing what is
+required.
+
+### command line
+
+The options to `mandel` are mostly a straight combination of the `fractalator`
+and `colorator` parameters. Differences are noted below.
+
+<dl>
+<dt>-o, --output-file &lt;filename&gt;</dt>
+<dd>This is the path prefix for both the .fract file and the image file. If
+&lt;filename&gt; is `/somedir/foo` ,then the .fract file will be
+`/somedir/foo.fract` and the image file will be `/somedir/foo.bmp`</dd>
+<dt>-s, --samples</dt>
+<dd>Like the fractalator option</dt>
+<dt>--script &lt;filename&gt;</dt>
+<dd>Same as the (-s, -script-file) options to colorator</dd>
+</dl>
+
 
 ## gmandel
 
