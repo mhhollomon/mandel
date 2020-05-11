@@ -66,7 +66,7 @@ std::shared_ptr<point_grid> compute_fractal(fractal_params p) {
         double base_img = p.bb_bottom_right.imag() + ( img_increment * row );
 
         compute_slice({rs, row, p.limit, 0, p.samples_real, 
-                base_img, base_real, real_increment});
+                base_img, base_real, real_increment, p.escape_radius});
 
         (*retval)[row] = rs;
     }

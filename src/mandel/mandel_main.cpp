@@ -30,6 +30,7 @@ struct mandel_options {
     int    height;
     int    limit;
     bool   debug = false;
+    bool   force = false;
     int    jobs;
 
 };
@@ -50,6 +51,8 @@ mandel_options parse_commandline(int argc, char**argv) {
         ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
         ("d,debug", "Print debug information", cxxopts::value(clopts.debug))
         ("s,samples", "Number of samples in each dimension", cxxopts::value(clopts.samples)->default_value("0"))
+        ("force", "Force recomputation of the fractal, even if the parameters match",
+            cxxopts::value(clopts.force)->default_value("false"))
         ("width", "Number of samples along the real axis", cxxopts::value(clopts.width)->default_value("0"))
         ("height", "Number of samples along the imaginary axis", cxxopts::value(clopts.height)->default_value("0"))
         ("aspect", "WxH samples along the axis - also computes new height", cxxopts::value(clopts.aspect))
@@ -268,10 +271,14 @@ int main (int argc, char*argv[]) {
     std::string fract_file_name = clopts.output_file + ".fract";
 
     bool need_to_compute = true;
-    if ( fs::exists(fract_file_name)) {
-        auto meta_data = FractalFile::read_meta_data_from_file(fract_file_name);
 
-        need_to_compute = not meta_data.similar( {
+    if (clopts.force) {
+        need_to_compute = true;
+    } else  if (fs::exists(fract_file_name)) {
+        try {
+            auto meta_data = FractalFile::read_meta_data_from_file(fract_file_name);
+
+            need_to_compute = not meta_data.similar( {
                 { clopts.left_top_real, clopts.left_top_img },
                 { clopts.right_bottom_real, clopts.right_bottom_img },
                 clopts.escape,
@@ -280,6 +287,11 @@ int main (int argc, char*argv[]) {
                 clopts.height,
                 0,0
                 }) ;
+        } catch (std::runtime_error &e) {
+            // swallow any exception and just
+            // go ahead a recompute.
+            need_to_compute = true;
+        }
     }
 
 
